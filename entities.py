@@ -1,7 +1,7 @@
 from dependency_injector import containers, providers
 
 
-class Movie:
+class App:
     def __init__(self, title: str):
         self.title = str(title)
 
@@ -9,23 +9,16 @@ class Movie:
         return '{0}(title={1})'.format(self.__class__.__name__, repr(self.title))
     
 
-class ApplicationContainer(containers.DeclarativeContainer):
-    movie = providers.Factory(Movie)
+class Context(containers.DeclarativeContainer):
     config = providers.Configuration()
-
-    # print(config.finder.csv.path, config.finder.csv.delimiter)
+    config.from_yaml('config.yml')
+    app = providers.Factory(App, 'Bashni bot')
 
 
 def main():
-    container = ApplicationContainer()
-    container.config.from_yaml('config.yml')
-    config = container.config()
-    print(config.)
-
-    
-    
-    movie = Movie('Hello')
-    print(movie)
+    context = Context()
+    app = context.app()
+    config = context.config()
 
 
 if __name__ == '__main__':
