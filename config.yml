@@ -1,0 +1,5 @@
+finder:
+
+  csv:
+    path: "data/movies.csv"
+    delimiter: ","
