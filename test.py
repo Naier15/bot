@@ -1,3 +1,7 @@
+from django.contrib.auth import authenticate, login, update_session_auth_hash
+
+
+
 def create_chats():
 	chats = []
 	for idx in range(5):

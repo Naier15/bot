@@ -3,13 +3,17 @@ import webbrowser
 import telebot, math
 from telebot import types
 
+from telebot.util import async_dec
 
+
+# bot = telebot.AsyncTeleBot('1291275643:AAHIk28uq57pVT5ZZz-IEQllgQhP5_mwx7s')
 bot = telebot.TeleBot('1291275643:AAHIk28uq57pVT5ZZz-IEQllgQhP5_mwx7s')
 current_page: int = 1
 chats_counter: int = 0
 items_per_page: int = 10
 last_message: int = None
 
+@async_dec()
 def generate_chats() -> Iterable[dict]:
 	global chats_counter
 	chats_counter = 0
@@ -19,6 +23,7 @@ def generate_chats() -> Iterable[dict]:
 		chats_counter += 1
 	return chats
 
+@async_dec()
 def make_page(message: types.Message, current_page: int) -> Iterable:
 	global items_per_page, last_message
 	# if last_message:
@@ -47,9 +52,11 @@ def make_page(message: types.Message, current_page: int) -> Iterable:
 	else:
 		msg = bot.send_message(message.chat.id, 'Выберете чат:', reply_markup=buttons)
 	last_message = msg.message_id
+	print('hi')
 
 
 @bot.callback_query_handler(func=lambda call: call.data in ('next', 'back'))
+@async_dec()
 def next(call: types.CallbackQuery):
 	global current_page
 	if call.data == 'next':
@@ -64,11 +71,13 @@ def next(call: types.CallbackQuery):
 		make_page(call.message, current_page)
 
 @bot.callback_query_handler(func=lambda call: True)
+@async_dec()
 def other(call: types.CallbackQuery):
 	print(f'Message recieved {call.data}')
 
 
 @bot.message_handler(commands=['start'])
+@async_dec()
 def start(message: types.Message):
 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
 	btn1 = types.KeyboardButton ("Каталог квартир")
@@ -81,6 +90,7 @@ def start(message: types.Message):
 	bot.send_message(message.chat.id, send_mess, reply_markup=markup)
 
 @bot.message_handler(content_types=['text'])
+@async_dec()
 def mess(message: types.Message):
 	print('start')
 	global current_page
