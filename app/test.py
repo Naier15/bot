@@ -15,3 +15,11 @@ items_per_page = len(chats)
 index = (current_page - 1) * items_per_page
 # chats[current_page:*page]
 print(index)
+
+
+# bot.edit_message_text('Хотел другой текст', message.chat.id, msg.message_id)
+# bot.delete_messages(message.chat.id, [msg.message_id, msg2.message_id])
+
+
+# if last_message:
+# 	bot.delete_messages(message.chat.id, [last_message])
