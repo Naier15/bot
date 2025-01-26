@@ -8,6 +8,7 @@ dependency-injector = "*"
 aiogram = "*"
 python-dotenv = "*"
 apscheduler = "*"
+emoji = "*"
 
 [dev-packages]
 
