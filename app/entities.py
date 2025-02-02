@@ -1,5 +1,5 @@
-from dependency_injector import containers, providers, schema
 from typing import Iterable, Optional
+from aiogram import types
 import math
 
 
@@ -39,3 +39,38 @@ class App:
             types.InlineKeyboardButton(text='>', callback_data='next')
         ], row_width=3)
         return buttons
+    
+# @bot.callback_query_handler(func=lambda call: call.data in ('next', 'back'))
+# def next(call: types.CallbackQuery):
+# 	buttons = None
+# 	if call.data == 'next':
+# 		buttons = app.make_page(app.current_page + 1)
+# 	elif call.data == 'back':
+# 		buttons = app.make_page(app.current_page - 1)
+	
+# 	if buttons:
+# 		bot.send_message(call.message.chat.id, 'Выберете чат:', reply_markup=buttons)
+
+# @bot.callback_query_handler(func=lambda call: True)
+# def other(call: types.CallbackQuery):
+# 	print(f'Message recieved {call.data}')
+
+
+# @bot.message_handler(commands=['start'])
+# def start(message: types.Message):
+# 	markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+# 	btn1 = types.KeyboardButton ("Каталог квартир")
+# 	btn2 = types.KeyboardButton ("Каталог коммерции")
+# 	btn3 = types.KeyboardButton ("Мой профиль")
+# 	btn4 = types.KeyboardButton ("Фотоотчеты")
+# 	btn5 = types.KeyboardButton ("Помощь")
+# 	markup.add(btn1, btn2, btn3, btn4, btn5)
+# 	send_mess = f"Привет, {message.from_user.first_name}!\nПогнали?"
+# 	bot.send_message(message.chat.id, send_mess, reply_markup=markup)
+
+
+# @bot.message_handler(content_types=['text'])
+# def mess(message: types.Message):
+# 	buttons = app.make_page(1)
+# 	if buttons:
+# 		bot.send_message(message.chat.id, 'Выберете чат:', reply_markup=buttons)
