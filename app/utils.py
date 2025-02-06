@@ -5,7 +5,7 @@ import logging, inspect, os
 
 def log(func: Callable):
     def inner(*args: tuple, **kwargs: dict) -> Any:
-        logging.getLogger(os.path.abspath(inspect.getfile(func))).info(func.__name__)
+        # logging.getLogger(os.path.abspath(inspect.getfile(func))).info(func.__name__)
         print(os.path.abspath(inspect.getfile(func)), func.__name__)
         return func(*args, **kwargs)
     return inner

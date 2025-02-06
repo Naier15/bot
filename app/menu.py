@@ -14,16 +14,29 @@ from .utils import form_buttons, log
 router = Router()
 
 @dataclass
+class Subscription:
+    city: Optional[str]
+    estate: Optional[str]
+    house: Optional[str]
+    url: Optional[str]
+
+@dataclass
 class User:
-    id: Optional[int] = None
-    phone: Optional[str] = None
-    login: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
-    email: Optional[str] = None
-    city: Optional[str] = None
-    estate: Optional[str] = None
-    house: Optional[str] = None
+    id: Optional[int]
+    username: Optional[str]
+    phone: Optional[str]
+    login: Optional[str]
+    password: Optional[str]
+    email: Optional[str]
+    subscriptions: list[Subscription] = [
+        Subscription(
+            'grv1510@mail.ru', 
+            'Владивосток',
+            'ЖК Атмосфера',
+            'Стрелковая 18к2',
+            'https://custom.com'
+        )
+    ]
 
     def to_dict(self) -> dict:
         return self.__dict__
@@ -34,10 +47,10 @@ class User:
     
     def get_data(self) -> str:
         res = (
-            f'{f'📞 {self.phone}\n' if self.phone else ''}'
-            f'{f'🆔 {self.login}\n' if self.login else ''}'
-            f'{f'✉ {self.email}\n' if self.email else ''}'
-            f'{f'🏠 {self.estate}\n' if self.estate else ''}'
+            f'{f'📞 Телефон: {self.phone}\n' if self.phone else ''}'
+            f'{f'🆔 Логин: {self.login}\n' if self.login else ''}'
+            f'{f'✉ Email: {self.email}\n' if self.email else ''}'
+            f'{f'🏠 Подписка: {self.estate}\n' if self.estate else ''}'
         )
         return res if res else 'Нет данных'
 
@@ -117,10 +130,10 @@ class App:
 async def start(msg: types.Message, state: FSMContext):
     await App.clear_history(state)
     await msg.answer(
-        text.introduction, 
-        reply_markup = form_buttons([ [types.KeyboardButton(text = 'Разрешить', request_contact = True)] ])
+        text.introduction,
+        reply_markup = form_buttons([ [types.KeyboardButton(text = 'Разрешить') ]])#, request_contact = True)] ])
     )
-    # await get_menu(msg, state)
+    await get_menu(msg, state)
 
 @log
 @router.message(F.contact)

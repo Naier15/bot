@@ -1,6 +1,7 @@
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+import regex
 
 from .utils import form_buttons, log
 from . import text
@@ -18,8 +19,10 @@ class Page(StatesGroup):
     
 async def set_login(msg: types.Message) -> bool:
     login = msg.text.strip()
+    await msg.delete()
     if len(login) > 5 and len(login) < 16:
         App.user.login = login
+        await msg.answer(f' Логин: {login} '.center(40, '-'))
         return True
     else:
         await msg.answer(
@@ -30,11 +33,10 @@ async def set_login(msg: types.Message) -> bool:
 
 async def set_password(msg: types.Message) -> bool:
     password = msg.text.strip()
+    await msg.delete()
     if len(password) > 7:
         App.user.password = password
-        password = '*' * len(password)
-        print(password)
-        await App.bot.edit_message_text(password, message_id = msg.message_id, chat_id = msg.from_user.id)
+        await msg.answer(f' Пароль: {'*' * len(password)} '.center(40, '-'))
         return True
     else:
         await msg.answer(
@@ -44,13 +46,25 @@ async def set_password(msg: types.Message) -> bool:
         return False
 
 async def set_email(msg: types.Message):
-    App.user.email = msg.text.strip()
+    email = msg.text.strip()
+    await msg.delete()
+    if regex.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+        App.user.email = email
+        await msg.answer(f' Email: {email} '.center(40, '-'))
+        return True
+    else:
+        await msg.answer(
+            text.email_tip, 
+            reply_markup = form_buttons([ [types.KeyboardButton(text = App.TO_MENU)] ])
+        )      
+        return False
+    
 
 @log
 @router.message(F.text == App.PROFILE)
 async def profile_main(msg: types.Message, state: FSMContext):    
     await msg.answer(
-        f'Ваш профиль: {App.user.get_data()}', 
+        f'Ваш профиль:\n{App.user.get_data()}', 
         reply_markup = form_buttons([
             [types.KeyboardButton(text = App.EDIT)], 
             [types.KeyboardButton(text = App.TO_MENU)]
@@ -62,7 +76,7 @@ async def profile_main(msg: types.Message, state: FSMContext):
 @router.message(Page.login, F.text == App.EDIT)
 async def profile_edit_start(msg: types.Message):
     await msg.answer(
-        f'Введите ваш логин:\n' + text.login_tip, 
+        f'Введите ваш логин:\n{text.login_tip}', 
         reply_markup = form_buttons([ [types.KeyboardButton(text = App.TO_MENU)] ], 'Ожидаем...')
     )
 
@@ -75,8 +89,8 @@ async def profile_edit_login(msg: types.Message, state: FSMContext):
     if not await set_login(msg):
         return
     await msg.answer(
-        f'Введите пароль:\nПАРОЛЬ ОБЯЗАТЕЛЬНО НУЖНО ЗАПОМНИТЬ!\n' + text.password_tip, 
-        reply_markup = form_buttons([ [types.KeyboardButton(text = App.TO_MENU)] ], 'Ожидаем...')
+        f'Введите пароль:\n{text.password_tip}\nПАРОЛЬ ОБЯЗАТЕЛЬНО НУЖНО ЗАПОМНИТЬ!', 
+        reply_markup = types.ReplyKeyboardRemove()
     )
     await App.set_state(Page.password, state)
 
@@ -93,7 +107,7 @@ async def profile_edit_password(msg: types.Message, state: FSMContext):
         reply_markup = form_buttons([
             [types.KeyboardButton(text = App.SKIP)],
             [types.KeyboardButton(text = App.TO_MENU)]
-        ], 'Ожидаем...')
+        ], 'Напишите...')
     )
     await App.set_state(Page.email, state)
 
@@ -103,7 +117,8 @@ async def profile_edit_email(msg: types.Message, state: FSMContext):
     if msg.text == App.TO_MENU:
         return await get_menu(msg, state)
     if msg.text != App.SKIP:
-        await set_email(msg)
+        if not await set_email(msg):
+            return
 
     await msg.answer(
         text.auth_finished, 

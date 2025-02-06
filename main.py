@@ -7,24 +7,49 @@ from app import App, menu_router, buildings_router, profile_router, subscription
 from app.utils import log
 
 
-logging.basicConfig(
-    filename = f'./log.log',
-    level = logging.INFO, 
-    format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    encoding = 'utf-8'
-)
+# logging.basicConfig(
+#     filename = f'./log.log',
+#     level = logging.INFO, 
+#     format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+#     encoding = 'utf-8'
+# )
+
+
+from aiogram import Router, F, types
+from aiogram.filters import Command, CommandStart
+from aiogram.fsm.context import FSMContext
+from dataclasses import dataclass
+from typing import Optional, Self
+from aiogram import Bot
+from aiogram.fsm.state import State
+
+from app import form_buttons, log, text
+
+
+# router = Router()
+
+# @log
+# @router.message(CommandStart())
+# async def start(msg: types.Message, state: FSMContext):
+#     await msg.answer(
+#         'Hello'
+#     )
+    
+# @router.message(F.text)
+# async def start2(msg: types.Message, state: FSMContext):
+#     print(msg.text)
+#     await msg.edit_text
 
 @log
 async def main():
-	bot = App.bot
-	await bot.delete_webhook(drop_pending_updates = True)
+	await App.bot.delete_webhook(drop_pending_updates = True)
       
 	commands = [
         types.BotCommand(command = 'start', description = 'Старт'),
 		types.BotCommand(command = 'menu', description = 'В меню'),
         types.BotCommand(command = 'state', description = 'Состояние')
     ]
-	await bot.set_my_commands(commands, types.BotCommandScopeDefault())
+	await App.bot.set_my_commands(commands, types.BotCommandScopeDefault())
 	
 	scheduler = AsyncIOScheduler(timezone = 'Asia/Vladivostok')
     
@@ -35,7 +60,7 @@ async def main():
 	dp.include_router(estate_router)
 	dp.include_router(menu_router)
 	print('Start')
-	await dp.start_polling(bot, allowed_updates = dp.resolve_used_update_types())
+	await dp.start_polling(App.bot, allowed_updates = dp.resolve_used_update_types())
 
 
 if __name__ == '__main__':

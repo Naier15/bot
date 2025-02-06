@@ -2,32 +2,33 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from .menu import App
 from .utils import form_buttons, log
-from .menu import get_menu
+from .menu import App, get_menu
 
 
 router = Router()
 
 class Page(StatesGroup):
-    menu = State()
     app = State()
 
 @log
 @router.message(F.text == App.SUBSCRIPTION)
 async def subscription_menu(msg: types.Message, state: FSMContext):
+    subscription_btns = [
+        [types.KeyboardButton(text = f'{sub.city} - {sub.estate} - {sub.house}')] for sub in App.user.subscriptions
+    ]
     await msg.answer(
         'Действующие подписки:', 
         reply_markup = form_buttons([
-            [types.KeyboardButton(text = 'Город - ЖК - Дом')],
+            *subscription_btns,
             [types.KeyboardButton(text = App.NEW_SUBSCRIPTION)], 
             [types.KeyboardButton(text = App.TO_MENU)]
         ])
     )
-    await App.set_state(Page.menu, state)
+    await App.set_state(Page.app, state)
 
 @log
-@router.message(Page.menu)
+@router.message(Page.app)
 async def subscription_app(msg: types.Message, state: FSMContext):
     if msg.text == App.TO_MENU:
         return await get_menu(msg, state)
@@ -35,6 +36,6 @@ async def subscription_app(msg: types.Message, state: FSMContext):
         return await subscription_menu(msg, state)
     
     await msg.answer(
-        'Сайт ЖК (url):', 
+        f'Сайт ЖК ({App.user.subscriptions[0].url}):', 
         reply_markup = form_buttons([ [types.KeyboardButton(text = App.BACK)] ])
     )

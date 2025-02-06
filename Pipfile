@@ -9,6 +9,7 @@ aiogram = "*"
 python-dotenv = "*"
 apscheduler = "*"
 emoji = "*"
+regex = "*"
 
 [dev-packages]
 
