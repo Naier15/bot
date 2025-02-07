@@ -1,6 +1,7 @@
-from dotenv import load_dotenv
 from dataclasses import dataclass
 from os import environ
+
+from dotenv import load_dotenv
 
 
 res = load_dotenv()

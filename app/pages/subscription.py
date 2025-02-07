@@ -2,8 +2,10 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from .utils import form_buttons, log
-from .menu import App, get_menu
+from .menu import get_menu
+from .estate import estate_start
+from ..utils import form_buttons, log
+from ..entities import App
 
 
 router = Router()
@@ -32,6 +34,8 @@ async def subscription_menu(msg: types.Message, state: FSMContext):
 async def subscription_app(msg: types.Message, state: FSMContext):
     if msg.text == App.TO_MENU:
         return await get_menu(msg, state)
+    elif msg.text == App.NEW_SUBSCRIPTION:
+        return await estate_start(msg, state)
     elif msg.text == App.BACK:
         return await subscription_menu(msg, state)
     

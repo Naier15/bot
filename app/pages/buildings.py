@@ -1,8 +1,8 @@
 from aiogram import Router, F, types
 
-from .menu import App
-from .utils import log, form_buttons
-from . import text
+from ..entities import App
+from ..utils import log, form_buttons
+from .. import text
 
 
 router = Router()
