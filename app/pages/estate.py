@@ -2,9 +2,11 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from ..entities import App, Subscription
-from ..utils import form_buttons, log
 from .menu import get_menu
+from .. import text
+from ..text import Btn
+from ..entities import App, Subscription
+from ..utils import log
 
 
 router = Router()
@@ -12,7 +14,7 @@ router = Router()
 class Page(StatesGroup):
     find_estate = State()
     find_house = State()
-    finish = State()
+    finished = State()
 
 async def set_city(msg: str) -> bool:
     if len(msg) > 0:
@@ -37,7 +39,7 @@ async def set_house(msg: str) -> bool:
 
 
 @log
-@router.message(F.text == App.NEW_SUBSCRIPTION)
+@router.message(F.text == Btn.NEW_SUBSCRIPTION.value)
 async def estate_start(msg: types.Message, state: FSMContext):
     App.subscription = Subscription()
     buttons = App.page.using([
@@ -59,7 +61,7 @@ async def estate_start(msg: types.Message, state: FSMContext):
         return
     
     await msg.answer(
-        f'Выберете город:', 
+        text.choose_city, 
         reply_markup = buttons
     )
     await App.set_state(Page.find_estate, state)
@@ -78,72 +80,130 @@ async def estate_search(call: types.CallbackQuery):
         await call.message.edit_reply_markup(reply_markup = buttons)
 
 @log
-@router.callback_query(Page.find_estate)
+@router.message(Page.find_estate, F.text)
+async def city_error(msg: types.Message, state: FSMContext):
+    await msg.answer(text.choose_city_error)
+
+@log
+@router.callback_query(Page.find_estate, F.data)
 async def estate(call: types.CallbackQuery, state: FSMContext):
     if not await set_city(call.data):
         return
     buttons = App.page.using([
         {
-            'title': 'ЖК Атмосфера',
-            'id': 'ЖК Атмосфера'
+            'title': 'Атмосфера',
+            'id': 'Атмосфера'
         }, 
         {
-            'title': 'ЖК Горизонт',
-            'id': 'ЖК Горизонт'
+            'title': 'Горизонт',
+            'id': 'Горизонт'
         },
         {
-            'title': 'ЖК Зеленый бульвар',
-            'id': 'ЖК Зеленый бульвар'
+            'title': 'Зеленый бульвар',
+            'id': 'Зеленый бульвар'
+        },
+                {
+            'title': 'Атмосфера2',
+            'id': 'Атмосфера2'
+        }, 
+        {
+            'title': 'Горизонт2',
+            'id': 'Горизонт2'
+        },
+        {
+            'title': 'Зеленый бульвар2',
+            'id': 'Зеленый бульвар2'
+        },
+                {
+            'title': 'Атмосфера3',
+            'id': 'Атмосфера3'
+        }, 
+        {
+            'title': 'Горизонт3',
+            'id': 'Горизонт3'
+        },
+        {
+            'title': 'Зеленый бульвар3',
+            'id': 'Зеленый бульвар3'
+        },
+                {
+            'title': 'Атмосфера4',
+            'id': 'Атмосфера4'
+        }, 
+        {
+            'title': 'Горизонт4',
+            'id': 'Горизонт4'
+        },
+        {
+            'title': 'Зеленый бульвар4',
+            'id': 'Зеленый бульвар4'
+        },
+                {
+            'title': 'Атмосфера5',
+            'id': 'Атмосфера5'
+        }, 
+        {
+            'title': 'Горизонт5',
+            'id': 'Горизонт5'
+        },
+        {
+            'title': 'Зеленый бульвар5',
+            'id': 'Зеленый бульвар5'
         }
     ]).get_page(1)
     if not buttons:
         return
     
     await call.message.answer(
-        f'На новости какого ЖК вы хотите подписаться:', 
+        text.choose_estate, 
         reply_markup = buttons
     )
     await App.replace_state(Page.find_house, state)
 
 @log
-@router.callback_query(Page.find_house)
-async def house(call: types.CallbackQuery, state: FSMContext):
+@router.message(Page.find_house, F.text)
+async def estate_error(msg: types.Message, state: FSMContext):
+    await msg.answer(text.choose_estate_error)
+
+@log
+@router.callback_query(Page.find_house, F.data)
+async def choose_house(call: types.CallbackQuery, state: FSMContext):
     if not await set_estate(call.data):
-        return
+        return await call.message.answer(text.choose_estate_error)
     buttons = App.page.using([
         {
-            'title': 'Дом №1',
-            'id': 'Дом №1'
+            'title': '1',
+            'id': '1'
         }, 
         {
-            'title': 'Дом №2',
-            'id': 'Дом №2'
+            'title': '2',
+            'id': '2'
         },
         {
-            'title': 'Дом №3',
-            'id': 'Дом №3'
+            'title': '3',
+            'id': '3'
         }
     ]).get_page(1)
     if not buttons:
         return
     
     await call.message.answer(
-        f'Выберите дом:', 
+        text.choose_house, 
         reply_markup = buttons
     )
-    await App.replace_state(Page.finish, state)
+    await App.replace_state(Page.finished, state)
 
 @log
-@router.callback_query(Page.finish)
+@router.message(Page.finished, F.text)
+async def house_error(msg: types.Message):
+    await msg.answer(text.choose_house_error)
+
+@log
+@router.callback_query(Page.finished, F.data)
 async def house(call: types.CallbackQuery, state: FSMContext):
     if not await set_house(call.data):
         return
-    await call.message.answer('<b>Подписка оформлена успешно!</b>\nПросматривать подписки можно во вкладке Подписка')
-    App.user.subscriptions.append(App.subscription)
+    await call.message.answer(text.subscription_success)
+    App.user.subscriptions += [App.subscription]
     App.subscription = None
     await get_menu(call.message, state)
-
-
-
-
-

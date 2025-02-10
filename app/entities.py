@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Optional, Self, Iterable
 import math
 
@@ -8,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
+from .text import Btn
 from .config import Config
 from .utils import form_buttons
 
@@ -16,7 +16,7 @@ class Page:
     def __init__(self):
         self.current_page: int = 1
         self.chats_counter: int = 0
-        self.items_per_page: int = 2
+        self.items_per_page: int = 8
         self.chats: Iterable[dict[str, str]]
 
     def using(self, items: Iterable[dict[str, str]]) -> Self:
@@ -85,19 +85,6 @@ class User:
         return res if res else 'Нет данных'
 
 class App:
-    MENU = '🔹 Меню 🔹'
-    FLATS = 'Каталог квартир 🏡'
-    OFFICES = 'Помещения для бизнеса 🏢'
-    PROFILE = 'Мой профиль 👤'
-    SUBSCRIPTION = 'Подписка ✅'
-    HELP = 'Помощь 💬'
-    BACK = 'Назад ⏪'
-    EDIT = 'Редактировать анкету ✏'
-    SKIP = 'Пропустить ⏩'
-    SUBSCRIBE = 'Подписаться ⭐'
-    NEW_SUBSCRIPTION = 'Новая подписка ➕'
-    TO_MENU = 'В главное меню ⏪'
-    NO_EDIT_PASSWORD = 'Оставить прежний ⏩'
     history: list[State] = []
     user: User = User()
     bot: Bot = Bot(
@@ -111,14 +98,14 @@ class App:
     def menu() -> types.ReplyKeyboardMarkup:
         btns = [
             [
-                types.KeyboardButton(text=App.FLATS),
-                types.KeyboardButton(text=App.PROFILE)
+                types.KeyboardButton(text=Btn.FLATS.value),
+                types.KeyboardButton(text=Btn.PROFILE.value)
             ],
             [
-                types.KeyboardButton(text=App.OFFICES),
-                types.KeyboardButton(text=App.SUBSCRIPTION)
+                types.KeyboardButton(text=Btn.OFFICES.value),
+                types.KeyboardButton(text=Btn.SUBSCRIPTION.value)
             ],
-            [types.KeyboardButton(text=App.HELP)]
+            [types.KeyboardButton(text=Btn.HELP.value)]
         ]
         return form_buttons(btns)
     

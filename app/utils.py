@@ -17,3 +17,8 @@ def form_buttons(btn: list, input_prompt: str = 'Выберете действи
         one_time_keyboard = True, 
         input_field_placeholder = input_prompt
     )
+
+def form_inline_buttons(btn: list, input_prompt: str = 'Выберете действие:') -> types.InlineKeyboardMarkup:
+    return types.InlineKeyboardMarkup(
+        inline_keyboard = btn
+    )

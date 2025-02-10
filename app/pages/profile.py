@@ -7,6 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from .menu import get_menu
 from .estate import estate_start
 from .. import text
+from ..text import Btn
 from ..utils import form_buttons, log
 from ..entities import App
 
@@ -54,35 +55,35 @@ async def set_email(msg: types.Message):
     
 
 @log
-@router.message(F.text == App.PROFILE)
+@router.message(F.text == Btn.PROFILE.value)
 async def profile_main(msg: types.Message, state: FSMContext):    
     await msg.answer(
         f'ВАШ ПРОФИЛЬ:\n{App.user.get_data()}', 
         reply_markup = form_buttons([
-            [types.KeyboardButton(text = App.EDIT)], 
-            [types.KeyboardButton(text = App.TO_MENU)]
+            [types.KeyboardButton(text = Btn.EDIT.value)], 
+            [types.KeyboardButton(text = Btn.TO_MENU.value)]
         ])
     )
     await App.set_state(Page.login, state)
 
 @log
-@router.message(Page.login, F.text == App.EDIT)
+@router.message(Page.login, F.text == Btn.EDIT.value)
 async def profile_edit_start(msg: types.Message):
     await msg.answer(
         f'Введите ваш логин:\n{text.login_tip}', 
-        reply_markup = form_buttons([ [types.KeyboardButton(text = App.TO_MENU)] ])
+        reply_markup = form_buttons([ [types.KeyboardButton(text = Btn.TO_MENU.value)] ])
     )
 
 @log
 @router.message(Page.login)
 async def profile_edit_login(msg: types.Message, state: FSMContext):
-    if msg.text == App.TO_MENU:
+    if msg.text == Btn.TO_MENU.value:
         return await get_menu(msg, state)
     
     if not await set_login(msg):
         return
     await msg.answer(
-        f'Введите пароль:\n{text.password_tip}\nПАРОЛЬ ОБЯЗАТЕЛЬНО НУЖНО ЗАПОМНИТЬ!', 
+        f'Введите пароль:\n{text.password_tip}{text.password_disclaimer}', 
         reply_markup = types.ReplyKeyboardRemove()
     )
     await App.set_state(Page.password, state)
@@ -90,16 +91,16 @@ async def profile_edit_login(msg: types.Message, state: FSMContext):
 @log
 @router.message(Page.password)
 async def profile_edit_password(msg: types.Message, state: FSMContext):
-    if msg.text == App.TO_MENU:
+    if msg.text == Btn.TO_MENU.value:
         return await get_menu(msg, state)
     
     if not await set_password(msg):
         return
     await msg.answer(
-        f'Введите адрес электронной почты:', 
+        text.choose_email, 
         reply_markup = form_buttons([
-            [types.KeyboardButton(text = App.SKIP)],
-            [types.KeyboardButton(text = App.TO_MENU)]
+            [types.KeyboardButton(text = Btn.SKIP.value)],
+            [types.KeyboardButton(text = Btn.TO_MENU.value)]
         ])
     )
     await App.set_state(Page.email, state)
@@ -107,17 +108,17 @@ async def profile_edit_password(msg: types.Message, state: FSMContext):
 @log
 @router.message(Page.email)
 async def profile_edit_email(msg: types.Message, state: FSMContext):
-    if msg.text == App.TO_MENU:
+    if msg.text == Btn.TO_MENU.value:
         return await get_menu(msg, state)
-    if msg.text != App.SKIP:
+    if msg.text != Btn.SKIP.value:
         if not await set_email(msg):
             return
     await msg.answer(f'ВАШ ПРОФИЛЬ:\n{App.user.get_data()}')
     await msg.answer(
         text.auth_finished, 
         reply_markup = form_buttons([ 
-            [types.KeyboardButton(text = App.SUBSCRIBE)],
-            [types.KeyboardButton(text = App.SKIP)]
+            [types.KeyboardButton(text = Btn.SUBSCRIBE.value)],
+            [types.KeyboardButton(text = Btn.SKIP.value)]
         ])
     )
     await App.set_state(Page.finish, state)
@@ -126,7 +127,7 @@ async def profile_edit_email(msg: types.Message, state: FSMContext):
 @router.message(Page.finish)
 async def profile_finish(msg: types.Message, state: FSMContext):   
     await App.clear_history(state)
-    if msg.text == App.SUBSCRIBE:
+    if msg.text == Btn.SUBSCRIBE.value:
         return await estate_start(msg, state)
     else:
         return await get_menu(msg, state)
