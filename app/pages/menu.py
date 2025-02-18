@@ -7,7 +7,6 @@ from ..text import Btn
 from ..utils import form_buttons, log
 from ..entities import App
 
-
 router = Router()
 
 @log

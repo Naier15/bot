@@ -1,11 +1,16 @@
 import asyncio
-
 from aiogram import Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app import log, App, menu_router, buildings_router, profile_router, subscription_router, estate_router
+from app import connect_django
+connect_django('..')
+from app import log, App, menu_router, buildings_router, profile_router, subscription_router, property_router
 
+# from authapp.models import UserProfile
+
+# for it in UserProfile.objects.all()[:5]:
+#     print(it)
 
 # logging.basicConfig(
 #     filename = f'./log.log',
@@ -32,7 +37,7 @@ async def main():
 		buildings_router,
 		profile_router,
 		subscription_router,
-		estate_router,
+		property_router,
 		menu_router
 	)]
 	print('Start')

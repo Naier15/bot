@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from .menu import get_menu
-from .estate import estate_start
+from .property import property_start
 from .. import text
 from ..text import Btn
 from ..utils import form_buttons, log
@@ -128,6 +128,6 @@ async def profile_edit_email(msg: types.Message, state: FSMContext):
 async def profile_finish(msg: types.Message, state: FSMContext):   
     await App.clear_history(state)
     if msg.text == Btn.SUBSCRIBE.value:
-        return await estate_start(msg, state)
+        return await property_start(msg, state)
     else:
         return await get_menu(msg, state)

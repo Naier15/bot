@@ -4,14 +4,28 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+psycopg2-binary = "*"
 dependency-injector = "*"
 aiogram = "*"
 python-dotenv = "*"
 apscheduler = "*"
 emoji = "*"
 regex = "*"
+django = "*"
+pillow = "*"
+django-ckeditor = "*"
+unicode-slugify = "*"
+django-extensions = "*"
+django-simple-captcha = "*"
+pytz = "*"
+requests = "*"
+django-el-pagination = "*"
+django-yaturbo = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.13"
+
+[scripts]
+main = "python start.py"

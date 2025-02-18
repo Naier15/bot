@@ -1,6 +1,13 @@
 from aiogram import types
 from typing import Callable, Any
-import logging, inspect, os
+import logging, inspect, os, sys, django
+import django.conf
+
+def connect_django(path_to_django: str):
+	sys.path.append(path_to_django)
+	os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
+	django.setup()
+	print(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
 
 def log(func: Callable):

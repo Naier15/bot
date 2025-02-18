@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from .menu import get_menu
-from .estate import estate_start
+from .property import property_start
 from .. import text
 from ..text import Btn
 from ..utils import form_buttons, log, form_inline_buttons
@@ -20,7 +20,7 @@ class Page(StatesGroup):
 @router.message(F.text == Btn.SUBSCRIPTION.value)
 async def subscription_menu(msg: types.Message, state: FSMContext):
     subscription_btns = [
-        [types.KeyboardButton(text = f'{sub.city} - {sub.estate} - {sub.house}')] for sub in App.user.subscriptions
+        [types.KeyboardButton(text = f'{sub.city} - {sub.property} - {sub.house}')] for sub in App.user.subscriptions
     ]
     await msg.answer(
         text.subscriptions, 
@@ -51,7 +51,7 @@ async def subscription_remove(msg: types.Message, state: FSMContext):
 @log
 @router.message(Page.remove, F.text)
 async def subscription_remove_error(msg: types.Message, state: FSMContext):
-    await msg.answer(text.choose_estate_error)
+    await msg.answer(text.choose_property_error)
 
 @log
 @router.callback_query(Page.remove, F.data)
@@ -61,7 +61,7 @@ async def subscription_remove(call: types.CallbackQuery, state: FSMContext):
             App.user.subscriptions.remove(sub)
             break
     else:
-        return await call.message.answer(text.choose_estate_error)
+        return await call.message.answer(text.choose_property_error)
     
     await call.message.answer(text.subscription_remove_success)
     await get_menu(call.message, state)
@@ -72,7 +72,7 @@ async def subscription_app(msg: types.Message, state: FSMContext):
     if msg.text == Btn.TO_MENU.value:
         return await get_menu(msg, state)
     elif msg.text == Btn.NEW_SUBSCRIPTION.value:
-        return await estate_start(msg, state)
+        return await property_start(msg, state)
     elif msg.text == Btn.BACK.value:
         return await subscription_menu(msg, state)
     

@@ -98,8 +98,8 @@ choose_house_error = 'Выберите номер дома из списка:'
 choose_city = 'Выберите город:'
 choose_city_error = 'Выберите город из списка:'
 
-choose_estate = 'На новости какого ЖК вы хотите подписаться:'
-choose_estate_error = 'Выберите ЖК из списка:'
+choose_property = 'На новости какого ЖК вы хотите подписаться:'
+choose_property_error = 'Выберите ЖК из списка:'
 
 
 

@@ -15,48 +15,51 @@ from .utils import form_buttons
 class Page:
     def __init__(self):
         self.current_page: int = 1
-        self.chats_counter: int = 0
+        self.quantity: int = 0
         self.items_per_page: int = 8
-        self.chats: Iterable[dict[str, str]]
+        self.choices: list[str]
 
-    def using(self, items: Iterable[dict[str, str]]) -> Self:
-        self.chats_counter = len(items)
-        self.chats = items
+    def using(self, choices: list[str]) -> Self:
+        self.quantity = len(choices)
+        self.choices = choices
         return self
     
-    def get_page(self, page: int) -> Optional[types.InlineKeyboardMarkup]:
-        if page < 1 or math.ceil(self.chats_counter / self.items_per_page) < page:
+    def get_page(self, page_number: Optional[int] = None) -> Optional[types.InlineKeyboardMarkup]:
+        if not page_number:
+            page_number = self.current_page
+        if page_number < 1 or math.ceil(self.quantity / self.items_per_page) < page_number:
             return
         
-        self.current_page = page
+        self.current_page = page_number
         index = (self.current_page - 1) * self.items_per_page
-        chats_to_show = self.chats[index:index+self.items_per_page]
-        if len(chats_to_show) == 0:
+        chunk = self.choices[index:index+self.items_per_page]
+        if len(chunk) == 0:
             return
         buttons = []
-        for chat in chats_to_show:
-            buttons.append([types.InlineKeyboardButton(text = chat['title'], callback_data = chat['id'])])
+        for choice in chunk:
+            print(choice)
+            buttons.append([types.InlineKeyboardButton(text = choice, callback_data = choice[-7:])])
         buttons += [[
             types.InlineKeyboardButton(text = '<', callback_data = 'back'),
-            types.InlineKeyboardButton(text = f' {self.current_page}/{math.ceil(self.chats_counter / self.items_per_page)} '.center(12, '-'), callback_data = 'page'),
+            types.InlineKeyboardButton(text = f' {self.current_page}/{math.ceil(self.quantity / self.items_per_page)} '.center(12, '-'), callback_data = 'page'),
             types.InlineKeyboardButton(text = '>', callback_data = 'next')
         ]]
         return types.InlineKeyboardMarkup(inline_keyboard = buttons)
 
 class Subscription:
     city: Optional[str]
-    estate: Optional[str]
+    property: Optional[str]
     house: Optional[str]
     url: Optional[str]
 
     def __init__(self, 
         city: Optional[str] = None, 
-        estate: Optional[str] = None, 
+        property: Optional[str] = None, 
         house: Optional[str] = None, 
         url: Optional[str] = None
     ) -> Self:
         self.city = city
-        self.estate = estate
+        self.property = property
         self.house = house
         self.url = url
 
@@ -93,6 +96,11 @@ class App:
     )
     page: Page = Page()
     subscription: Optional[Subscription]
+
+    @staticmethod
+    def save_subscription() -> None:
+        App.user.subscriptions += [App.subscription]
+        App.subscription = None
     
     @staticmethod
     def menu() -> types.ReplyKeyboardMarkup:
