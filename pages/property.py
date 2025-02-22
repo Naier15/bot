@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from .menu import get_menu
-from app import text, log, App, Subscription, Database
+from app import text, App, log
 
 
 router = Router()
@@ -16,9 +16,9 @@ class Page(StatesGroup):
 @log
 @router.message(F.text == text.Btn.NEW_SUBSCRIPTION.value)
 async def property_start(msg: types.Message, state: FSMContext):
-    App.subscription = Subscription()
+    App.new_subscription()
 
-    cities = await Database.get_cities()
+    cities = await App.database.get_cities()
     buttons = App.page.using(cities).get_page(1)
 
     if not buttons:
@@ -58,7 +58,7 @@ async def property(call: types.CallbackQuery, state: FSMContext):
     if not await App.subscription.set_city(call.data):
         return
     
-    properties = await Database.get_properties()
+    properties = await App.database.get_properties(App.subscription.city)
     buttons = App.page.using(properties).get_page(1)
     if not buttons:
         return
@@ -80,7 +80,7 @@ async def choose_building(call: types.CallbackQuery, state: FSMContext):
     if not await App.subscription.set_property(call.data):
         return await call.message.answer(text.choose_property_error)
     
-    buildings = await Database.get_buildings()
+    buildings = await App.database.get_buildings(App.subscription.property)
     if len(buildings) == 0:
         return
     elif len(buildings) == 1:
@@ -109,5 +109,5 @@ async def building(call: types.CallbackQuery, state: FSMContext):
 
 async def success(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer(text.subscription_success)
-    App.save_subscription()
+    await App.save_subscription()
     await get_menu(call.message, state)

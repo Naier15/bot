@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Self
-import math, regex, secrets, string
+import math, regex
 
 from aiogram import Bot, types
 from aiogram.fsm.state import State
@@ -8,7 +8,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from app import text, form_buttons #, Config
+from .database import Database
+from .utils import Markup
+from . import text
+from config import Config
 
 
 class Page:
@@ -36,7 +39,6 @@ class Page:
             return
         buttons = []
         for choice in chunk:
-            print(choice['text'])
             buttons.append([types.InlineKeyboardButton(
                 text = choice['text'], 
                 callback_data = choice['id']
@@ -47,7 +49,8 @@ class Page:
             types.InlineKeyboardButton(text = '>', callback_data = 'next')
         ]]
         buttons += [[types.InlineKeyboardButton(text = 'В меню', callback_data = 'menu')]]
-        return types.InlineKeyboardMarkup(inline_keyboard = buttons)
+        return Markup.inline_buttons(buttons)
+
 
 @dataclass
 class Subscription:
@@ -55,20 +58,23 @@ class Subscription:
     property: Optional[str]
     building: Optional[str]
     url: Optional[str]
+    database: Optional[Database]
 
     def __init__(self, 
         city: Optional[str] = None, 
         property: Optional[str] = None, 
         building: Optional[str] = None, 
-        url: Optional[str] = None
+        url: Optional[str] = None,
+        database: Optional[Database] = None
     ) -> Self:
         self.city = city
         self.property = property
         self.building = building
         self.url = url
+        self.database = database
 
     def __str__(self) -> str:
-        return f'Subscription(city = {self.city}, property  = {self.property}, building = {self.building})'
+        return f'Subscription(city = {self.city}, property = {self.property}, building = {self.building})'
     
     async def set_city(self, city: str) -> bool:
         if len(city) > 0:
@@ -90,15 +96,26 @@ class Subscription:
             return True
         else:
             return False
+        
+    async def save(self, chat_id: str) -> None:
+        await self.database.save_subscription(chat_id, self.building)
+
+    async def remove(self, chat_id: str) -> None:
+        await self.database.remove_subscription(chat_id, self.building)
+
 
 class User:
-    id: Optional[int] = 31313131
-    username: Optional[str] = 'Роман'
-    phone: Optional[str] = ''
-    login: Optional[str] = 'naier'
+    id: Optional[int] = None #'341461613'
+    phone: Optional[str] = None #'89147166183'
+    is_registed: bool = False
+    is_sync: bool = False
+    login: Optional[str] = None #'Роман'
     password: Optional[str]
-    email: Optional[str] = 'grv1510@mail.ru'
+    email: Optional[str] = None #'grv1510@mail.ru'
     subscriptions: list[Subscription] = [Subscription('1', '576', '3609')]
+
+    def __init__(self, database: Database) -> Self:
+        self.database = database
 
     def to_dict(self) -> dict:
         return self.__dict__
@@ -108,16 +125,17 @@ class User:
         return User(**data)
 
     def get_data(self) -> str:
+        print(self.is_registed) 
         res = (
-            f'{f'- ЛОГИН 😉 <b><code>{self.login}</code></b>\n' if self.login else ''}'
+            f'{f'- ЛОГИН 😉 <b><code>{self.login}</code></b>\n' if self.is_registed and self.login else ''}'
             f'{f'- ТЕЛЕФОН 📞 <b><code>{self.phone}</code></b>\n' if self.phone else ''}'
-            f'{f'- EMAIL 📧 <b><code>{self.email}</code></b>\n' if self.email else ''}'
-            '\n<i>Нажмите на логин, email или телефон, чтобы их скопировать</i>'
+            f'{f'- EMAIL 📧 <b><code>{self.email}</code></b>\n' if self.is_registed and self.email else ''}'
+            '\n<i>🔹 Нажмите на логин, email или телефон, чтобы их скопировать</i>'
         )
         return res if res else 'Нет данных'
      
     async def set_phone(self, msg: types.Message) -> bool:
-        phone = msg.contact.phone_number.strip().replace('-', '')
+        phone = msg.contact.phone_number.strip().replace(' ', '').replace('-', '')
         if len(phone) == 11 and phone.startswith('7'):
             phone = f'8{phone[1:]}'
         elif len(phone) == 12 and phone.startswith('+7'):
@@ -135,10 +153,8 @@ class User:
         await msg.delete()
         if len(login) > 5 and len(login) < 16:
             self.login = login
-            await msg.answer(f' ЛОГИН: {login} '.center(40, '-'))
             return True
         else:
-            await msg.answer(text.login_tip)
             return False
         
     async def set_password(self, msg: types.Message) -> bool:
@@ -146,13 +162,11 @@ class User:
         await msg.delete()
         if len(password) > 7:
             self.password = password
-            await msg.answer(f' ПАРОЛЬ: {'*' * len(password)} '.center(40, '-'))
             return True
         else:
-            await msg.answer(text.password_tip)      
             return False
         
-    async def set_email(self, msg: types.Message):
+    async def set_email(self, msg: types.Message) -> bool:
         email = msg.text.strip()
         await msg.delete()
         if regex.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
@@ -163,23 +177,62 @@ class User:
             await msg.answer(text.email_tip)      
             return False
         
-    async def save(temporary: bool = False):
-        pass
+    async def save(self, temporary: bool = False) -> Optional[str]:
+        if temporary:
+            tg_user = await self.database.get_temp_user(self.id)
+            if not tg_user:
+                await self.database.create_temp_user(self.id, self.phone)
+        else:
+            is_valid = await self.database.is_user_valid(self.login)
+            if is_valid:
+                await self.database.create_user(self.id, self.login, self.password, self.email)
+                self.is_registed = True
+            else:
+                return text.Error.user_exists.value
+    
+    async def sync(self, msg: types.Message) -> None:
+        if not self.id:
+            self.id = msg.from_user.id
+
+        tg_user = await self.database.get_user(self.id)
+        if not tg_user:
+            return
+        self.is_registed = True if tg_user.is_registed else False
+        
+        if not self.phone:
+            self.phone = tg_user.user_profile.tel
+        self.login = tg_user.user_profile.user.username
+        self.email = tg_user.user_profile.user.email if tg_user.user_profile.user.email else None
+        self.subscriptions = [Subscription(building = building.id) for building in tg_user.building.all()]
+        self.is_sync = True
+
+    async def clear_data(self) -> None:
+        self.login = None
+        self.password = None
+        self.email = None
 
 
 class App:
     history: list[State] = []
-    user: User = User()
+    
     bot: Bot = Bot(
-        # token = Config().BOT_TOKEN, 
-        token = '1291275643:AAHIk28uq57pVT5ZZz-IEQllgQhP5_mwx7s',
+        token = Config().BOT_TOKEN, 
         default = DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
     page: Page = Page()
     subscription: Optional[Subscription]
+    database: Database = Database()
+    user: User = User(database)
+    is_debug: bool = True
 
     @staticmethod
-    def save_subscription() -> None:
+    def new_subscription() -> Subscription:
+        App.subscription = Subscription(database = App.database)
+        return App.subscription
+
+    @staticmethod
+    async def save_subscription() -> None:
+        await App.subscription.save(App.user.id)
         App.user.subscriptions += [App.subscription]
         App.subscription = None
     
@@ -196,10 +249,11 @@ class App:
             ],
             [types.KeyboardButton(text=text.Btn.HELP.value)]
         ]
-        return form_buttons(btns)
+        return Markup.bottom_buttons(btns)
     
     @staticmethod
     async def clear_history(state: FSMContext):
+        App.user.password = None
         App.history.clear()
         await state.clear()
     
@@ -209,7 +263,6 @@ class App:
             return
         App.history[-1] = page
         await state.set_state(page)
-        print('History: ', App.history)
 
     @staticmethod
     async def set_state(page: State, state: FSMContext) -> None:
@@ -217,13 +270,11 @@ class App:
             return
         App.history.append(page)
         await state.set_state(page)
-        print('History: ', App.history)
 
     @staticmethod
     async def get_state() -> Optional[State]:
         if len(App.history) == 0:
             return
-        print('History: ', App.history)
         return App.history[-1]
 
     @staticmethod
@@ -236,67 +287,4 @@ class App:
             page = App.history[-1] # Получение предыдущего состояния
             await state.set_state(page)
             App.history.pop() # Удаляем и предыдущего состояние, поскольку оно добавится в следующем обработчике
-        print('History: ', App.history, 'page: ', page)
         return page
-    
-class Database:        
-
-    @staticmethod
-    async def get_cities() -> list[dict]:
-        from property.models import City
-        cities = [{
-            'id': str(x.id),
-            'text': x.city_name
-        } async for x in City.objects.all()]
-        cities.sort(key = lambda x: x['text'])
-        return cities
-
-    @staticmethod
-    async def get_properties() -> list:
-        from property.models import Property
-        properties = [{
-            'id': str(x.id),
-            'text': x.name
-        } async for x in Property.objects.filter(city_id = int(App.subscription.city))]
-        properties.sort(key = lambda x: x['text'])
-        return properties
-    
-    @staticmethod
-    async def get_buildings() -> list:
-        from property.models import Buildings
-        buildings = [{
-            'id': str(x.id),
-            'text': x.num_dom
-        } async for x in Buildings.objects.filter(fk_property = int(App.subscription.property))]
-        buildings.sort(key = lambda x: x['text'])
-        return buildings
-    
-    @staticmethod
-    async def get_building(id: str) -> dict:
-        from property.models import Buildings
-        building = [{
-            'id': str(x.id),
-            'text': x.addr,
-            'url': None
-        } async for x in Buildings.objects.filter(id = int(id))]
-        return building[0]
-    
-    @staticmethod
-    async def create_temp_user(id: str, phone_number: str) -> None:
-        from django.contrib.auth.models import User
-        from authapp.models import UserProfile
-
-        alphabet = string.ascii_letters + string.digits
-        temp_login = 'temp_' + ''.join(secrets.choice(alphabet) for _ in range(16))
-        user = User.objects.create_user(
-            username = temp_login,
-            password = temp_login
-        )
-        profile = UserProfile.objects.create(tel = phone_number, user = user)
-
-    @staticmethod
-    async def get_user() -> None:
-        from django.contrib.auth.models import User
-        from authapp.models import UserProfile
-
-        # UserProfile.objects.filter(tel = phone_number, user = user)

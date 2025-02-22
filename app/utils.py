@@ -4,17 +4,40 @@ import logging, inspect, os, sys, django
 import django.conf
 
 
-class CurrentBtns:
-    btns: Optional[types.ReplyKeyboardMarkup | types.InlineKeyboardMarkup] = None
+class Markup:
+    __btns: Optional[types.ReplyKeyboardMarkup | types.InlineKeyboardMarkup] = None
 
     @staticmethod
-    def get() -> Optional[types.ReplyKeyboardMarkup | types.InlineKeyboardMarkup]:
-        return CurrentBtns.btns
+    def current() -> Optional[types.ReplyKeyboardMarkup | types.InlineKeyboardMarkup]:
+        return Markup.__btns
     
     @staticmethod
     def set(btns: types.ReplyKeyboardMarkup | types.InlineKeyboardMarkup) -> types.ReplyKeyboardMarkup | types.InlineKeyboardMarkup:
-        CurrentBtns.btns = btns
-        return CurrentBtns.btns
+        Markup.__btns = btns
+        return Markup.__btns
+    
+    @staticmethod
+    def bottom_buttons(btn: list, input_prompt: str = 'Выберете действие:') -> types.ReplyKeyboardMarkup:
+        return Markup.set(
+            types.ReplyKeyboardMarkup(
+                keyboard = btn, 
+                resize_keyboard = True, 
+                one_time_keyboard = True, 
+                input_field_placeholder = input_prompt
+            )
+        )
+
+    @staticmethod
+    def inline_buttons(btn: list) -> types.InlineKeyboardMarkup:
+        return Markup.set(
+            types.InlineKeyboardMarkup(
+                inline_keyboard = btn
+            )
+        )
+    
+    @staticmethod
+    def no_buttons() -> types.ReplyKeyboardRemove:
+        return types.ReplyKeyboardRemove()
     
 def connect_django(path_to_django: str):
 	sys.path.append(path_to_django)
@@ -28,20 +51,3 @@ def log(func: Callable):
         print(os.path.abspath(inspect.getfile(func)), func.__name__)
         return func(*args, **kwargs)
     return inner
-
-def form_buttons(btn: list, input_prompt: str = 'Выберете действие:') -> types.ReplyKeyboardMarkup:
-    return CurrentBtns.set(
-        types.ReplyKeyboardMarkup(
-            keyboard = btn, 
-            resize_keyboard = True, 
-            one_time_keyboard = True, 
-            input_field_placeholder = input_prompt
-        )
-    )
-
-def form_inline_buttons(btn: list) -> types.InlineKeyboardMarkup:
-    return CurrentBtns.set(
-        types.InlineKeyboardMarkup(
-            inline_keyboard = btn
-        )
-    )
