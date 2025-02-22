@@ -4,7 +4,7 @@ from os import environ
 from dotenv import load_dotenv
 
 
-res = load_dotenv()
+# res = load_dotenv()
 
 @dataclass
 class Config:

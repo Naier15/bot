@@ -3,50 +3,22 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from .menu import get_menu
-from .. import text
-from ..text import Btn
-from ..entities import App, Subscription
-from ..utils import log
-# from ..db import get_cities
+from app import text, log, App, Subscription, Database
 
 
 router = Router()
 
 class Page(StatesGroup):
     find_property = State()
-    find_house = State()
+    find_building = State()
     finished = State()
 
-async def set_city(msg: str) -> bool:
-    if len(msg) > 0:
-        App.subscription.city = msg
-        return True
-    else:
-        return False
-    
-async def set_property(msg: str) -> bool:
-    if len(msg) > 0:
-        App.subscription.property = msg
-        return True
-    else:
-        return False
-    
-async def set_house(msg: str) -> bool:
-    if len(msg) > 0:
-        App.subscription.house = msg
-        return True
-    else:
-        return False
-
-
 @log
-@router.message(F.text == Btn.NEW_SUBSCRIPTION.value)
+@router.message(F.text == text.Btn.NEW_SUBSCRIPTION.value)
 async def property_start(msg: types.Message, state: FSMContext):
     App.subscription = Subscription()
 
-    from property.models import City
-    cities = [x.city_name async for x in City.objects.all()]
-    cities.sort()
+    cities = await Database.get_cities()
     buttons = App.page.using(cities).get_page(1)
 
     if not buttons:
@@ -59,11 +31,13 @@ async def property_start(msg: types.Message, state: FSMContext):
     await App.set_state(Page.find_property, state)
 
 @log
-@router.callback_query(F.data.in_(['next', 'back', 'page']))
-async def property_search(call: types.CallbackQuery):
+@router.callback_query(F.data.in_(['next', 'back', 'page', 'menu']))
+async def property_search(call: types.CallbackQuery, state: FSMContext):
     buttons = None
     page = App.page
-    if call.data == 'next':
+    if call.data == 'menu':
+        await get_menu(call.message, state)
+    elif call.data == 'next':
         buttons = page.get_page(page.current_page + 1)
     elif call.data == 'back':
         buttons = page.get_page(page.current_page - 1)
@@ -81,12 +55,10 @@ async def city_error(msg: types.Message, state: FSMContext):
 @log
 @router.callback_query(Page.find_property, F.data)
 async def property(call: types.CallbackQuery, state: FSMContext):
-    if not await set_city(call.data):
+    if not await App.subscription.set_city(call.data):
         return
     
-    from property.models import Property
-    properties = [x.name async for x in Property.objects.all()]
-    properties.sort()
+    properties = await Database.get_properties()
     buttons = App.page.using(properties).get_page(1)
     if not buttons:
         return
@@ -95,42 +67,47 @@ async def property(call: types.CallbackQuery, state: FSMContext):
         text.choose_property, 
         reply_markup = buttons
     )
-    await App.replace_state(Page.find_house, state)
+    await App.replace_state(Page.find_building, state)
 
 @log
-@router.message(Page.find_house, F.text)
+@router.message(Page.find_building, F.text)
 async def property_error(msg: types.Message, state: FSMContext):
     await msg.answer(text.choose_property_error)
 
 @log
-@router.callback_query(Page.find_house, F.data)
-async def choose_house(call: types.CallbackQuery, state: FSMContext):
-    if not await set_property(call.data):
+@router.callback_query(Page.find_building, F.data)
+async def choose_building(call: types.CallbackQuery, state: FSMContext):
+    if not await App.subscription.set_property(call.data):
         return await call.message.answer(text.choose_property_error)
     
-    from property.models import Buildings
-    buildings = [x.addr async for x in Buildings.objects.all()]
-    buildings.sort()
-    buttons = App.page.using(buildings).get_page(1)
-    if not buttons:
+    buildings = await Database.get_buildings()
+    if len(buildings) == 0:
         return
-    
-    await call.message.answer(
-        text.choose_house, 
-        reply_markup = buttons
-    )
-    await App.replace_state(Page.finished, state)
+    elif len(buildings) == 1:
+        if not await App.subscription.set_building(buildings[0]['id']):
+            return
+        await success(call, state)
+    else:
+        buttons = App.page.using(buildings).get_page(1)    
+        await call.message.answer(
+            text.choose_house, 
+            reply_markup = buttons
+        )
+        await App.replace_state(Page.finished, state)
 
 @log
 @router.message(Page.finished, F.text)
-async def house_error(msg: types.Message):
+async def buidling_error(msg: types.Message):
     await msg.answer(text.choose_house_error)
 
 @log
 @router.callback_query(Page.finished, F.data)
-async def house(call: types.CallbackQuery, state: FSMContext):
-    if not await set_house(call.data):
+async def building(call: types.CallbackQuery, state: FSMContext):
+    if not await App.subscription.set_building(call.data):
         return
+    await success(call, state)
+
+async def success(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer(text.subscription_success)
     App.save_subscription()
     await get_menu(call.message, state)
