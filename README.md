@@ -5,13 +5,12 @@
 ### Настройки:
 - в settings.py добавить `os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"`
 - в settings.py в список INSTALLED_APPS добавить `bot`
-![alt text](image-3.png)
-- git clone ссылка на бота
-- python manage.py migrate - установить миграцию из bot приложения
+- `git clone https://github.com/Naier15/bashni-bot`
+- `python manage.py migrate` - установить миграцию из bot приложения
 <br/><br/>
 ### Запуск бота:
 - `cd bot` перейти в папку с ботом
-- `pip instal` -U pip - обновить pip
+- `pip install -U pip` - обновить pip
 - `pip install pipenv` - скачать проектный менеджер pipenv
 - `pipenv shell` - активировать виртуальную среду
 - `pipenv install` - установить все зависимости
