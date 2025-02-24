@@ -54,7 +54,7 @@ async def get_state(msg: types.Message, state: FSMContext):
 async def get_menu(msg: types.Message, state: FSMContext):
     print(App.history)
     await App.clear_history(state)
-    await App.user.sync(msg)
+    await App.user.sync(msg.from_user.id)
     await msg.answer(
         text.Btn.MENU.value, 
         reply_markup = App.menu()

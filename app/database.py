@@ -48,7 +48,6 @@ class Database:
         slug = building.fk_property.slug
         city = building.fk_property.city.city_slug
         photos = MainPhotos.objects.filter(fk_building_id = int(id)).order_by('-id')[:3]
-        print(photos)
         building = {
             'id': str(building.id),
             'property_name': property_name,
@@ -111,4 +110,11 @@ class Database:
             return
         await tg_user.building.aremove(building)
         await tg_user.asave()
+        
+    async def clients_dispatch(self) -> list[int]:
+        users = []
+        async for user in TgUser.objects.all():
+            users.append(user.chat_id)
+        return users
+
         

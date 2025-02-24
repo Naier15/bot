@@ -153,11 +153,11 @@ class User:
             else:
                 return text.Error.user_exists.value
     
-    async def sync(self, msg: types.Message) -> None:
+    async def sync(self, chat_id: int) -> None:
         if self.is_sync:
             return
         if not self.id:
-            self.id = msg.from_user.id
+            self.id = chat_id
 
         tg_user = await self.database.get_user(self.id)
         if not tg_user:
@@ -264,3 +264,21 @@ class App:
             await state.set_state(page)
             App.history.pop() # Удаляем и предыдущего состояние, поскольку оно добавится в следующем обработчике
         return page
+    
+    @staticmethod
+    async def dispatch_to_clients() -> None:
+        chats = await App.database.clients_dispatch()
+
+        for chat_id in chats:
+            user = User(database = App.database)
+            await user.sync(chat_id)
+
+            for subscription in user.subscriptions:
+                await App.bot.send_message(
+                    user.id,
+                    (
+                        f'<a href="{subscription.url}">{subscription.property_name}</a>'
+                        f'\nСдача ключей: {subscription.send_keys}'
+                    ),
+                    reply_markup = Markup.no_buttons()
+                )
