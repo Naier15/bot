@@ -5,7 +5,7 @@
 ### Настройки:
 - в settings.py добавить `os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"`
 - в settings.py в список INSTALLED_APPS добавить `bot`
-- `git clone https://github.com/Naier15/bashni_bot`
+- `git clone https://github.com/Naier15/bot`
 - `python manage.py migrate` - установить миграцию из bot приложения
 <br/><br/>
 ### Запуск бота:
