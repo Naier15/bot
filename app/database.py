@@ -44,16 +44,17 @@ class Database:
     async def get_subscription_data(self, id: str) -> dict:
         building = Buildings.objects.filter(id = int(id)).first()
         property_id = building.fk_property.pk
+        property_name = building.fk_property.name
         slug = building.fk_property.slug
         city = building.fk_property.city.city_slug
         photos = MainPhotos.objects.filter(fk_building_id = int(id)).order_by('-id')[:3]
         print(photos)
         building = {
             'id': str(building.id),
-            'text': building.addr,
+            'property_name': property_name,
             'url': f'https://bashni.pro/property/{city}/{property_id}/{slug}/',
             'send_keys': building.send_keys.strftime('%d.%m.%Y'),
-            'photos': []
+            'photos': photos
         }
         return building
     

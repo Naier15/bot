@@ -1,2 +1,2 @@
-from .utils import log, Markup
+from .utils import log, Markup, PageBuilder
 from .entities import App

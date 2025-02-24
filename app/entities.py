@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Self
-import math, regex
+import regex
 
 from aiogram import Bot, types
 from aiogram.fsm.state import State
@@ -12,44 +12,6 @@ from .database import Database
 from .utils import Markup
 from . import text
 from config import Config
-
-
-class Page:
-    def __init__(self):
-        self.current_page: int = 1
-        self.quantity: int = 0
-        self.items_per_page: int = 8
-        self.choices: list[str]
-
-    def using(self, choices: list[str]) -> Self:
-        self.quantity = len(choices)
-        self.choices = choices
-        return self
-    
-    def get_page(self, page_number: Optional[int] = None) -> Optional[types.InlineKeyboardMarkup]:
-        if not page_number:
-            page_number = self.current_page
-        if page_number < 1 or math.ceil(self.quantity / self.items_per_page) < page_number:
-            return
-        
-        self.current_page = page_number
-        index = (self.current_page - 1) * self.items_per_page
-        chunk = self.choices[index:index+self.items_per_page]
-        if len(chunk) == 0:
-            return
-        buttons = []
-        for choice in chunk:
-            buttons.append([types.InlineKeyboardButton(
-                text = choice['text'], 
-                callback_data = choice['id']
-            )])
-        buttons += [[
-            types.InlineKeyboardButton(text = '<', callback_data = 'back'),
-            types.InlineKeyboardButton(text = f' {self.current_page}/{math.ceil(self.quantity / self.items_per_page)} '.center(12, '-'), callback_data = 'page'),
-            types.InlineKeyboardButton(text = '>', callback_data = 'next')
-        ]]
-        buttons += [[types.InlineKeyboardButton(text = 'В меню', callback_data = 'menu')]]
-        return Markup.inline_buttons(buttons)
 
 
 @dataclass
@@ -66,7 +28,7 @@ class Subscription:
         self.building_id: str = building_id
         self.url: str = None
         self.send_keys: str = 'Неизвестно'
-        self.address: str = None
+        self.property_name: str = None
         self.photos: list = []
 
     def __str__(self) -> str:
@@ -100,7 +62,7 @@ class Subscription:
             return False
         data = await self.database.get_subscription_data(self.building_id)
         self.url = data['url']
-        self.address = data['text']
+        self.property_name = data['property_name']
         self.send_keys = data['send_keys']
         self.photos = data['photos']
         return True
@@ -192,6 +154,8 @@ class User:
                 return text.Error.user_exists.value
     
     async def sync(self, msg: types.Message) -> None:
+        if self.is_sync:
+            return
         if not self.id:
             self.id = msg.from_user.id
 
@@ -225,7 +189,6 @@ class App:
         token = Config().BOT_TOKEN, 
         default = DefaultBotProperties(parse_mode = ParseMode.HTML)
     )
-    page: Page = Page()
     database: Database = Database()
     user: User = User(database)
     subscription: Optional[Subscription]
@@ -237,8 +200,13 @@ class App:
 
     @staticmethod
     async def save_subscription() -> None:
-        await App.subscription.save(App.user.id)
-        App.user.subscriptions += [App.subscription]
+        found_subscription = [
+            True for sub in App.user.subscriptions 
+            if sub.building_id == App.subscription.building_id
+        ]
+        if not found_subscription:
+            await App.subscription.save(App.user.id)
+            App.user.subscriptions += [App.subscription]
         App.subscription = None
     
     @staticmethod
@@ -261,6 +229,7 @@ class App:
         App.user.password = None
         App.history.clear()
         await state.clear()
+        print('--History cleared--')
     
     @staticmethod
     async def replace_state(page: State, state: FSMContext) -> None:
@@ -268,6 +237,7 @@ class App:
             return
         App.history[-1] = page
         await state.set_state(page)
+        print(f'--History {App.history}--')
 
     @staticmethod
     async def set_state(page: State, state: FSMContext) -> None:
@@ -275,6 +245,7 @@ class App:
             return
         App.history.append(page)
         await state.set_state(page)
+        print(f'--History {App.history}--')
 
     @staticmethod
     async def get_state() -> Optional[State]:

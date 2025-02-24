@@ -44,13 +44,17 @@ async def back(msg: types.Message, state: FSMContext):
         await get_menu(msg, state)
 
 @log
+@router.message(Command('state'))
+async def get_state(msg: types.Message, state: FSMContext):
+    print(App.history)
+
+@log
 @router.message(Command('menu'))
 @router.message(F.text)
 async def get_menu(msg: types.Message, state: FSMContext):
     print(App.history)
     await App.clear_history(state)
-    if not App.user.is_sync:
-        await App.user.sync(msg) 
+    await App.user.sync(msg)
     await msg.answer(
         text.Btn.MENU.value, 
         reply_markup = App.menu()

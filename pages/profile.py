@@ -9,7 +9,7 @@ from app import text, Markup, App, log
 
 router = Router()
 
-class Page(StatesGroup):
+class ProfilePage(StatesGroup):
     login = State()
     password = State()
     email = State()
@@ -26,10 +26,10 @@ async def profile_main(msg: types.Message, state: FSMContext):
             [types.KeyboardButton(text = text.Btn.TO_MENU.value)]
         ])
     )
-    await App.set_state(Page.login, state)
+    await App.set_state(ProfilePage.login, state)
 
 @log
-@router.message(Page.login, F.text == text.Btn.EDIT.value)
+@router.message(ProfilePage.login, F.text == text.Btn.EDIT.value)
 async def profile_edit_start(msg: types.Message, state: FSMContext):
     await msg.answer(
         f'{text.login_preview}\nПридумайте логин:\n{text.login_tip}', 
@@ -40,7 +40,7 @@ async def profile_edit_start(msg: types.Message, state: FSMContext):
     )
 
 @log
-@router.message(Page.login)
+@router.message(ProfilePage.login)
 async def profile_edit_login(msg: types.Message, state: FSMContext):
     if msg.text == text.Btn.TO_MENU.value:
         await App.user.clear_data()
@@ -58,10 +58,10 @@ async def profile_edit_login(msg: types.Message, state: FSMContext):
             'Напишите пароль:'
         )
     )
-    await App.set_state(Page.password, state)
+    await App.set_state(ProfilePage.password, state)
 
 @log
-@router.message(Page.password)
+@router.message(ProfilePage.password)
 async def profile_edit_password(msg: types.Message, state: FSMContext):
     if msg.text == text.Btn.TO_MENU.value:
         await App.user.clear_data()
@@ -79,10 +79,10 @@ async def profile_edit_password(msg: types.Message, state: FSMContext):
             [types.KeyboardButton(text = text.Btn.TO_MENU.value)]
         ], 'Напишите email:')
     )
-    await App.set_state(Page.email, state)
+    await App.set_state(ProfilePage.email, state)
 
 @log
-@router.message(Page.email)
+@router.message(ProfilePage.email)
 async def profile_edit_email(msg: types.Message, state: FSMContext):
     if msg.text == text.Btn.TO_MENU.value:
         await App.user.clear_data()
@@ -106,10 +106,10 @@ async def profile_edit_email(msg: types.Message, state: FSMContext):
             [types.KeyboardButton(text = text.Btn.SKIP.value)]
         ])
     )
-    await App.set_state(Page.finish, state)
+    await App.set_state(ProfilePage.finish, state)
 
 @log
-@router.message(Page.finish)
+@router.message(ProfilePage.finish)
 async def profile_finish(msg: types.Message, state: FSMContext):   
     await App.clear_history(state)
     if msg.text == text.Btn.SUBSCRIBE.value:
