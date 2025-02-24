@@ -41,12 +41,12 @@ class Database:
         buildings.sort(key = lambda x: x['text'])
         return buildings
     
-    async def get_building(self, id: str) -> dict:
+    async def get_subscription_data(self, id: str) -> dict:
         building = Buildings.objects.filter(id = int(id)).first()
         property_id = building.fk_property.pk
         slug = building.fk_property.slug
         city = building.fk_property.city.city_slug
-        photos = MainPhotos.objects.filter(fk_building_id = int(id)).order_by('-id')
+        photos = MainPhotos.objects.filter(fk_building_id = int(id)).order_by('-id')[:3]
         print(photos)
         building = {
             'id': str(building.id),

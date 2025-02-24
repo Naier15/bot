@@ -1,6 +1,9 @@
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.utils.media_group import MediaGroupBuilder
+
+import os
 
 from .menu import get_menu
 from .property import property_start
@@ -41,10 +44,10 @@ async def subscription_menu(msg: types.Message, state: FSMContext):
     
 @router.message(Page.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
 async def subscription_list(msg: types.Message, state: FSMContext):
-    subscription_btns = []
-    for sub in App.user.subscriptions:
-        data = await App.database.get_building(sub.building)
-        subscription_btns.append([types.InlineKeyboardButton(text = data['text'], callback_data = data['id'])])
+    subscription_btns = [
+        [types.InlineKeyboardButton(text = sub.address, callback_data = sub.building_id)]
+        for sub in App.user.subscriptions
+    ]
     if len(subscription_btns) == 0:
         return await msg.answer(text.subscription_empty, reply_markup = Markup.current())
     await msg.answer(
@@ -58,10 +61,10 @@ async def subscription_list(msg: types.Message, state: FSMContext):
 @log
 @router.message(Page.menu, F.text == text.Btn.REMOVE_SUBSCRIPTION.value)
 async def subscription_remove(msg: types.Message, state: FSMContext):
-    subscription_btns = []
-    for sub in App.user.subscriptions:
-        data = await App.database.get_building(sub.building)
-        subscription_btns.append([types.InlineKeyboardButton(text = data['text'], callback_data = data['id'])])
+    subscription_btns = [
+        [types.InlineKeyboardButton(text = sub.address, callback_data = sub.building_id)]
+        for sub in App.user.subscriptions
+    ]
     if len(subscription_btns) == 0:
         return await msg.answer(text.subscription_empty, reply_markup = Markup.current())
     
@@ -99,14 +102,18 @@ async def subscription_inline_choice(call: types.CallbackQuery, state: FSMContex
     if call.data == 'back':
         return await subscription_menu(call.message, state)
     else:
-        building = await App.database.get_building(call.data)
+        subscription = [x for x in App.user.subscriptions if x.building_id == call.data][0]
         await call.message.answer(
             (
-                f'<a href="{building.get('url', '')}">{building.get('text')}</a>'
-                f'\nСдача ключей: {building.get('send_keys', 'Неизвестно')}'
+                f'<a href="{subscription.url}">{subscription.address}</a>'
+                f'\nСдача ключей: {subscription.send_keys}'
             ),
             reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
         )
+        print(BASE_DIR)
+        photos = ['C:/Users/User/Desktop/bashni/static/img/Yulia.png']
+        media = [types.InputMediaPhoto(media = photo) for photo in photos]
+        await call.message.answer_media_group(media = media)
 
 @log
 @router.message(Page.menu)

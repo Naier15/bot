@@ -54,65 +54,67 @@ class Page:
 
 @dataclass
 class Subscription:
-    city: Optional[str]
-    property: Optional[str]
-    building: Optional[str]
-    url: Optional[str]
-    database: Optional[Database]
-
-    def __init__(self, 
-        city: Optional[str] = None, 
-        property: Optional[str] = None, 
-        building: Optional[str] = None, 
-        url: Optional[str] = None,
-        database: Optional[Database] = None
+    def __init__(self,
+        database: Database,
+        city_id: Optional[str] = None, 
+        property_id: Optional[str] = None, 
+        building_id: Optional[str] = None
     ) -> Self:
-        self.city = city
-        self.property = property
-        self.building = building
-        self.url = url
-        self.database = database
+        self.database: Database = database
+        self.city_id: str = city_id
+        self.property_id: str = property_id
+        self.building_id: str = building_id
+        self.url: str = None
+        self.send_keys: str = 'Неизвестно'
+        self.address: str = None
+        self.photos: list = []
 
     def __str__(self) -> str:
-        return f'Subscription(city = {self.city}, property = {self.property}, building = {self.building})'
-    
-    async def set_city(self, city: str) -> bool:
-        if len(city) > 0:
-            self.city = city
-            return True
-        else:
-            return False
+        return f'Subscription(city = {self.city_id}, property = {self.property_id}, building = {self.building_id})'
         
-    async def set_property(self, property: str) -> bool:
-        if len(property) > 0:
-            self.property = property
+    async def set(self, 
+        city_id: Optional[str] = None, 
+        property_id: Optional[str] = None, 
+        building_id: Optional[str] = None
+    ) -> bool:
+        if city_id and len(city_id) > 0:
+            self.city_id = city_id
             return True
-        else:
-            return False
-        
-    async def set_building(self, building: str) -> bool:
-        if len(building) > 0:
-            self.building = building
+        if property_id and len(property_id) > 0:
+            self.property_id = property_id
             return True
-        else:
-            return False
+        if building_id and len(building_id) > 0:
+            self.building_id = building_id
+            return True
+        return False
         
     async def save(self, chat_id: str) -> None:
-        await self.database.save_subscription(chat_id, self.building)
+        await self.sync()
+        await self.database.save_subscription(chat_id, self.building_id)
 
     async def remove(self, chat_id: str) -> None:
-        await self.database.remove_subscription(chat_id, self.building)
+        await self.database.remove_subscription(chat_id, self.building_id)
+
+    async def sync(self) -> bool:
+        if not self.building_id:
+            return False
+        data = await self.database.get_subscription_data(self.building_id)
+        self.url = data['url']
+        self.address = data['text']
+        self.send_keys = data['send_keys']
+        self.photos = data['photos']
+        return True
 
 
 class User:
-    id: Optional[int] = None #'341461613'
-    phone: Optional[str] = None #'89147166183'
+    id: Optional[int] = None
+    phone: Optional[str] = None
     is_registed: bool = False
     is_sync: bool = False
-    login: Optional[str] = None #'Роман'
+    login: Optional[str] = None
     password: Optional[str]
-    email: Optional[str] = None #'grv1510@mail.ru'
-    subscriptions: list[Subscription] = [Subscription('1', '576', '3609')]
+    email: Optional[str] = None
+    subscriptions: list[Subscription] = []
 
     def __init__(self, database: Database) -> Self:
         self.database = database
@@ -125,7 +127,6 @@ class User:
         return User(**data)
 
     def get_data(self) -> str:
-        print(self.is_registed) 
         res = (
             f'{f'- ЛОГИН 😉 <b><code>{self.login}</code></b>\n' if self.is_registed and self.login else ''}'
             f'{f'- ТЕЛЕФОН 📞 <b><code>{self.phone}</code></b>\n' if self.phone else ''}'
@@ -203,7 +204,12 @@ class User:
             self.phone = tg_user.user_profile.tel
         self.login = tg_user.user_profile.user.username
         self.email = tg_user.user_profile.user.email if tg_user.user_profile.user.email else None
-        self.subscriptions = [Subscription(building = building.id) for building in tg_user.building.all()]
+        self.subscriptions = [
+            Subscription(database = App.database, building_id = str(building.id)) 
+            for building in tg_user.building.all()
+        ]
+        [await x.sync() for x in self.subscriptions]
+        [x.photos for x in self.subscriptions]
         self.is_sync = True
 
     async def clear_data(self) -> None:
@@ -213,17 +219,16 @@ class User:
 
 
 class App:
+    is_debug: bool = True
     history: list[State] = []
-    
     bot: Bot = Bot(
         token = Config().BOT_TOKEN, 
-        default = DefaultBotProperties(parse_mode=ParseMode.HTML)
+        default = DefaultBotProperties(parse_mode = ParseMode.HTML)
     )
     page: Page = Page()
-    subscription: Optional[Subscription]
     database: Database = Database()
     user: User = User(database)
-    is_debug: bool = True
+    subscription: Optional[Subscription]
 
     @staticmethod
     def new_subscription() -> Subscription:
@@ -240,14 +245,14 @@ class App:
     def menu() -> types.ReplyKeyboardMarkup:
         btns = [
             [
-                types.KeyboardButton(text=text.Btn.FLATS.value),
-                types.KeyboardButton(text=text.Btn.PROFILE.value)
+                types.KeyboardButton(text = text.Btn.FLATS.value),
+                types.KeyboardButton(text = text.Btn.PROFILE.value)
             ],
             [
-                types.KeyboardButton(text=text.Btn.OFFICES.value),
-                types.KeyboardButton(text=text.Btn.SUBSCRIPTION.value)
+                types.KeyboardButton(text = text.Btn.OFFICES.value),
+                types.KeyboardButton(text = text.Btn.SUBSCRIPTION.value)
             ],
-            [types.KeyboardButton(text=text.Btn.HELP.value)]
+            [types.KeyboardButton(text = text.Btn.HELP.value)]
         ]
         return Markup.bottom_buttons(btns)
     

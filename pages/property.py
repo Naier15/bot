@@ -55,10 +55,10 @@ async def city_error(msg: types.Message, state: FSMContext):
 @log
 @router.callback_query(Page.find_property, F.data)
 async def property(call: types.CallbackQuery, state: FSMContext):
-    if not await App.subscription.set_city(call.data):
+    if not await App.subscription.set(city_id = call.data):
         return
     
-    properties = await App.database.get_properties(App.subscription.city)
+    properties = await App.database.get_properties(App.subscription.city_id)
     buttons = App.page.using(properties).get_page(1)
     if not buttons:
         return
@@ -77,14 +77,14 @@ async def property_error(msg: types.Message, state: FSMContext):
 @log
 @router.callback_query(Page.find_building, F.data)
 async def choose_building(call: types.CallbackQuery, state: FSMContext):
-    if not await App.subscription.set_property(call.data):
+    if not await App.subscription.set(property_id = call.data):
         return await call.message.answer(text.choose_property_error)
     
-    buildings = await App.database.get_buildings(App.subscription.property)
+    buildings = await App.database.get_buildings(App.subscription.property_id)
     if len(buildings) == 0:
         return
     elif len(buildings) == 1:
-        if not await App.subscription.set_building(buildings[0]['id']):
+        if not await App.subscription.set(building_id = buildings[0]['id']):
             return
         await success(call, state)
     else:
@@ -103,7 +103,7 @@ async def buidling_error(msg: types.Message):
 @log
 @router.callback_query(Page.finished, F.data)
 async def building(call: types.CallbackQuery, state: FSMContext):
-    if not await App.subscription.set_building(call.data):
+    if not await App.subscription.set(building_id = call.data):
         return
     await success(call, state)
 
