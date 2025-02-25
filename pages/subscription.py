@@ -1,9 +1,6 @@
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.utils.media_group import MediaGroupBuilder
-
-import os
 
 from .menu import get_menu
 from app import text, Markup, App, log
@@ -104,13 +101,15 @@ async def subscription_inline_choice(call: types.CallbackQuery, state: FSMContex
         subscription = [x for x in App.user.subscriptions if x.building_id == call.data][0]
         await call.message.answer(
             (
-                f'<a href="{subscription.url}">{subscription.property_name}</a>'
-                f'\nСдача ключей: {subscription.send_keys}'
+                f'{subscription.property_name}'
+                f'\n<a href="{subscription.url}">Сайт ЖК</a>'
+                f'\nСтадия строительства: {subscription.stage}'
+                f'\nСдача дома: {subscription.date_realise}'
+                f'\nПеренос сроков: {subscription.date_info}'
             ),
             reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
         )
-        photos = ['C:/Users/User/Desktop/bashni/static/img/Yulia.png']
-        media = [types.InputMediaPhoto(media = photo) for photo in photos]
+        media = [types.InputMediaPhoto(media = photo) for photo in subscription.photos]
         await call.message.answer_media_group(media = media)
 
 @log

@@ -3,6 +3,7 @@ from aiogram import Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from config import Config
 from app import log, App
 from pages import menu_router, buildings_router, profile_router, subscription_router, property_router
 
@@ -24,7 +25,7 @@ async def main():
     ]
     await App.bot.set_my_commands(commands, types.BotCommandScopeDefault())
 	
-    # scheduler = AsyncIOScheduler(timezone = 'Asia/Vladivostok')
+    scheduler = AsyncIOScheduler(timezone = Config().REGION)
     # scheduler.add_job(
     #     App.dispatch_to_clients, 
     #     trigger = 'cron', 

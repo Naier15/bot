@@ -16,3 +16,4 @@ venv/
 __pypackages__/
 __pycache__/
 *.png
+add.txt

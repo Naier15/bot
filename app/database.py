@@ -1,12 +1,13 @@
 from typing import Optional
 import secrets, string
 
+from config import Config
 from .utils import connect_django
 connect_django('..')
 
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile
-from property.models import City, Property, Buildings, MainPhotos
+from property.models import City, Property, Buildings, MainPhotos, CheckTermsPassKeys
 from bot.models import TgUser
 
 class Database:
@@ -14,11 +15,14 @@ class Database:
     async def get_cities(self) -> list[dict]:
         cities = []
         async for x in City.objects.all():
+            if x.city_name in ('Москва', 'Сочи'):
+                continue
             cities.append({
                 'id': str(x.id),
-                'text': x.city_name
+                'name': x.city_name,
+                'url': f'{Config().DJANGO_HOST}property/{x.city_slug}/'
             })
-        cities.sort(key = lambda x: x['text'])
+        cities.sort(key = lambda x: x['name'])
         return cities
 
     async def get_properties(self, city_id: str) -> list:
@@ -26,9 +30,9 @@ class Database:
         async for x in Property.objects.filter(city_id = int(city_id)):
             properties.append({
                 'id': str(x.id),
-                'text': x.name
+                'name': x.name
             })
-        properties.sort(key = lambda x: x['text'])
+        properties.sort(key = lambda x: x['name'])
         return properties
     
     async def get_buildings(self, property_id: str) -> list:
@@ -36,9 +40,9 @@ class Database:
         async for x in Buildings.objects.filter(fk_property = int(property_id)):
             buildings.append({
                 'id': str(x.id),
-                'text': x.num_dom
+                'name': x.num_dom
             })
-        buildings.sort(key = lambda x: x['text'])
+        buildings.sort(key = lambda x: x['name'])
         return buildings
     
     async def get_subscription_data(self, id: str) -> dict:
@@ -48,12 +52,24 @@ class Database:
         slug = building.fk_property.slug
         city = building.fk_property.city.city_slug
         photos = MainPhotos.objects.filter(fk_building_id = int(id)).order_by('-id')[:3]
+        photos = [f'{photo.main_img}' for photo in photos]
+        pass_keys = CheckTermsPassKeys.objects.filter(fk_object = building).first()
+        stage = building.build_stage
+        if stage == 'b':
+            stage = 'Строится'
+        elif stage == 'p':
+            stage = 'Сдан'
+        elif stage == 'd':
+            stage = 'Долгострой'
+        
         building = {
             'id': str(building.id),
             'property_name': property_name,
-            'url': f'https://bashni.pro/property/{city}/{property_id}/{slug}/',
-            'send_keys': building.send_keys.strftime('%d.%m.%Y'),
-            'photos': photos
+            'url': f'{Config().DJANGO_HOST}property/{city}/{property_id}/{slug}/',
+            'photos': photos,
+            'stage': stage,
+            'date_realise': pass_keys.changed_date,
+            'date_info': pass_keys.note
         }
         return building
     

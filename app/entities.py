@@ -26,10 +26,13 @@ class Subscription:
         self.city_id: str = city_id
         self.property_id: str = property_id
         self.building_id: str = building_id
-        self.url: str = None
+        self.url: Optional[str] = None
         self.send_keys: str = 'Неизвестно'
-        self.property_name: str = None
-        self.photos: list = []
+        self.property_name: Optional[str] = None
+        self.photos: list[str] = []
+        self.stage: Optional[str] = None
+        self.date_realise: Optional[str] = None
+        self.date_info: Optional[str] = None
 
     def __str__(self) -> str:
         return f'Subscription(city = {self.city_id}, property = {self.property_id}, building = {self.building_id})'
@@ -63,8 +66,10 @@ class Subscription:
         data = await self.database.get_subscription_data(self.building_id)
         self.url = data['url']
         self.property_name = data['property_name']
-        self.send_keys = data['send_keys']
         self.photos = data['photos']
+        self.stage = data['stage']
+        self.date_realise = data['date_realise']
+        self.date_info = data['date_info']
         return True
 
 

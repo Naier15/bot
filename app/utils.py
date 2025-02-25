@@ -75,7 +75,7 @@ class PageBuilder:
         buttons = []
         for choice in chunk:
             buttons.append([types.InlineKeyboardButton(
-                text = choice['text'], 
+                text = choice['name'], 
                 callback_data = choice['id']
             )])
         buttons += [[
