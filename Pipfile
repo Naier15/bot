@@ -21,6 +21,7 @@ requests = "*"
 django-el-pagination = "*"
 django-yaturbo = "*"
 regex = "*"
+fuzzywuzzy = {extras = ["speedup"], version = "*"}
 
 [dev-packages]
 

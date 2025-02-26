@@ -29,7 +29,7 @@ class Subscription:
         self.url: Optional[str] = None
         self.send_keys: str = 'Неизвестно'
         self.property_name: Optional[str] = None
-        self.photos: list[str] = []
+        self.photos: list[types.InputMediaPhoto] = []
         self.stage: Optional[str] = None
         self.date_realise: Optional[str] = None
         self.date_info: Optional[str] = None
@@ -59,6 +59,7 @@ class Subscription:
 
     async def remove(self, chat_id: str) -> None:
         await self.database.remove_subscription(chat_id, self.building_id)
+        App.user.subscriptions.remove(self)
 
     async def sync(self) -> bool:
         if not self.building_id:
@@ -71,6 +72,36 @@ class Subscription:
         self.date_realise = data['date_realise']
         self.date_info = data['date_info']
         return True
+    
+    async def send_info(self, msg: Optional[types.Message] = None, chat_id: Optional[int] = None) -> None:
+        if msg is None and chat_id is None:
+            raise Exception('Subscription.send_info - Не передали ни одного параметра')
+        answer = (
+            f'{self.property_name}'
+            f'\n<a href="{self.url}">Сайт ЖК</a>'
+            f'\nСтадия строительства: {self.stage}'
+            f'\nСдача дома: {self.date_realise}'
+            f'\nПеренос сроков: {self.date_info}'
+            # f'\nВсе фото и видео по <a href="">ссылке</a>'
+        )
+        if msg:
+            await msg.answer(
+                answer,
+                reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
+            )
+            # print(self.photos)
+            try:
+                await msg.answer_media_group(self.photos)
+            except:
+                pass
+            return 
+        if chat_id:
+            await App.bot.send_message(chat_id, answer, reply_markup = App.menu())
+            # print(self.photos)
+            try:
+                await App.bot.send_media_group(chat_id, self.photos)
+            except:
+                pass
 
 
 class User:
@@ -273,17 +304,9 @@ class App:
     @staticmethod
     async def dispatch_to_clients() -> None:
         chats = await App.database.clients_dispatch()
-
         for chat_id in chats:
             user = User(database = App.database)
             await user.sync(chat_id)
 
             for subscription in user.subscriptions:
-                await App.bot.send_message(
-                    user.id,
-                    (
-                        f'<a href="{subscription.url}">{subscription.property_name}</a>'
-                        f'\nСдача ключей: {subscription.send_keys}'
-                    ),
-                    reply_markup = Markup.no_buttons()
-                )
+                await subscription.send_info(chat_id = user.id)

@@ -15,8 +15,10 @@ class SubscriptionPage(StatesGroup):
 
 @log
 @router.message(F.text == text.Btn.SUBSCRIPTION.value)
-async def subscription_menu(msg: types.Message, state: FSMContext):
+async def menu(msg: types.Message, state: FSMContext):
     await App.set_state(SubscriptionPage.menu, state)
+    if not App.user.is_registed:
+        await App.user.sync(msg.from_user.id)
     if not App.user.is_registed:
         return await msg.answer(
             text.please_login, 
@@ -38,7 +40,7 @@ async def subscription_menu(msg: types.Message, state: FSMContext):
     )
     
 @router.message(SubscriptionPage.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
-async def subscription_list(msg: types.Message, state: FSMContext):
+async def list(msg: types.Message, state: FSMContext):
     subscription_btns = [
         [types.InlineKeyboardButton(text = sub.property_name, callback_data = sub.building_id)]
         for sub in App.user.subscriptions
@@ -55,7 +57,7 @@ async def subscription_list(msg: types.Message, state: FSMContext):
 
 @log
 @router.message(SubscriptionPage.menu, F.text == text.Btn.REMOVE_SUBSCRIPTION.value)
-async def subscription_remove(msg: types.Message, state: FSMContext):
+async def remove(msg: types.Message, state: FSMContext):
     subscription_btns = [
         [types.InlineKeyboardButton(text = sub.property_name, callback_data = sub.building_id)]
         for sub in App.user.subscriptions
@@ -74,57 +76,48 @@ async def subscription_remove(msg: types.Message, state: FSMContext):
 
 @log
 @router.message(SubscriptionPage.remove, F.text)
-async def subscription_remove_error(msg: types.Message, state: FSMContext):
+async def remove_error(msg: types.Message, state: FSMContext):
     await msg.answer(text.choose_property_error)
 
 @log
 @router.callback_query(SubscriptionPage.remove, F.data)
-async def subscription_remove(call: types.CallbackQuery, state: FSMContext):
+async def remove_result(call: types.CallbackQuery, state: FSMContext):
+    if call.data == 'back':
+        await App.go_back(state)
+        return await menu(call.message, state)
     for sub in App.user.subscriptions:
         if sub.building_id == call.data:
             await sub.remove(App.user.id)
-            App.user.subscriptions.remove(sub)
             break
     else:
         return await call.message.answer(text.choose_property_error)
     
     await call.message.answer(text.subscription_remove_success)
     await App.go_back(state)
-    await subscription_menu(call.message, state)
+    await menu(call.message, state)
 
 @log
 @router.callback_query(SubscriptionPage.menu)
-async def subscription_inline_choice(call: types.CallbackQuery, state: FSMContext):
+async def subscription_card(call: types.CallbackQuery, state: FSMContext):
     if call.data == 'back':
-        return await subscription_menu(call.message, state)
+        return await menu(call.message, state)
     else:
         subscription = [x for x in App.user.subscriptions if x.building_id == call.data][0]
-        await call.message.answer(
-            (
-                f'{subscription.property_name}'
-                f'\n<a href="{subscription.url}">Сайт ЖК</a>'
-                f'\nСтадия строительства: {subscription.stage}'
-                f'\nСдача дома: {subscription.date_realise}'
-                f'\nПеренос сроков: {subscription.date_info}'
-            ),
-            reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
-        )
-        media = [types.InputMediaPhoto(media = photo) for photo in subscription.photos]
-        await call.message.answer_media_group(media = media)
+        await subscription.send_info(call.message)
 
 @log
 @router.message(SubscriptionPage.menu)
-async def subscription_choice(msg: types.Message, state: FSMContext):
+async def choice(msg: types.Message, state: FSMContext):
     if msg.text == text.Btn.TO_MENU.value:
         return await get_menu(msg, state)
     elif msg.text == text.Btn.NEW_SUBSCRIPTION.value:
-        from .property import property_start
-        return await property_start(msg, state)
+        from .property import start
+        return await start(msg, state)
     elif msg.text == text.Btn.BACK.value:
-        return await subscription_menu(msg, state)
+        return await menu(msg, state)
     elif msg.text == text.Btn.EDIT.value:
-        from .profile import ProfilePage, profile_edit_start
+        from .profile import ProfilePage, edit_login
         
         await App.go_back(state)
         await App.set_state(ProfilePage.login, state)
-        return await profile_edit_start(msg, state)
+        return await edit_login(msg, state)

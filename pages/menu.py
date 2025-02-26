@@ -44,11 +44,6 @@ async def back(msg: types.Message, state: FSMContext):
         await get_menu(msg, state)
 
 @log
-@router.message(Command('state'))
-async def get_state(msg: types.Message, state: FSMContext):
-    print(App.history)
-
-@log
 @router.message(Command('menu'))
 @router.message(F.text)
 async def get_menu(msg: types.Message, state: FSMContext):

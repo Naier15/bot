@@ -4,6 +4,7 @@ import logging, inspect, math, os, sys, django
 import django.conf
 
 
+# Помощник создания markup и inline кнопок
 class Markup:
     __btns: Optional[types.ReplyKeyboardMarkup | types.InlineKeyboardMarkup] = None
 
@@ -39,6 +40,7 @@ class Markup:
     def no_buttons() -> types.ReplyKeyboardRemove:
         return types.ReplyKeyboardRemove()
     
+# Помощник создания inline редактора для выбора города, жк и дома
 class PageBuilder:
     current_page: int = 1
     quantity: int = 0
@@ -46,7 +48,7 @@ class PageBuilder:
     choices: list[str] = []
 
     @classmethod
-    def using(cls, choices: list[str]) -> Self:
+    def using(cls, choices: list[dict]) -> Self:
         cls.quantity = len(choices)
         cls.choices = choices
         cls.current_page = 1
@@ -91,12 +93,14 @@ class PageBuilder:
          
         return Markup.inline_buttons(buttons)
     
+# Подключение к Django
 def connect_django(path_to_django: str):
 	sys.path.append(path_to_django)
 	os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
 	django.setup()
 	print(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
+# Логгирование
 def log(func: Callable):
     def inner(*args: tuple, **kwargs: dict) -> Any:
         # logging.getLogger(os.path.abspath(inspect.getfile(func))).info(func.__name__)
