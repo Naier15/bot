@@ -45,10 +45,11 @@ async def edit_password(msg: types.Message, state: FSMContext):
         await App.user.clear_data()
         return await get_menu(msg, state)
     
-    if not await App.user.set_login(msg):
+    res = await App.user.set_login(msg)
+    if not res:
         await msg.answer(text.login_tip)
         return
-    
+    print(res)
     await msg.answer(f' ЛОГИН: {App.user.login} '.center(40, '-'))
     await msg.answer(
         f'Придумайте пароль:\n{text.password_tip}{text.password_disclaimer}', 
@@ -92,10 +93,8 @@ async def subscribe_or_finish(msg: types.Message, state: FSMContext):
     
     error = await App.user.save(temporary = False)
     if error:
-        return await msg.answer(
-            f'{error}\n{text.error}',
-            reply_markup = App.menu()
-        ) 
+        await App.clear_history(state)
+        return await msg.answer(f'{error}\n{text.error}', reply_markup = App.menu()) 
 
     await msg.answer(f'ВАШ ПРОФИЛЬ:\n{App.user.get_data()}')
     await msg.answer(

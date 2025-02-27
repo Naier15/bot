@@ -30,16 +30,16 @@ async def main():
     await App.bot.set_my_commands(commands, types.BotCommandScopeDefault())
 	
     scheduler = AsyncIOScheduler(timezone = Config().REGION)
-    scheduler.add_job(
-        App.dispatch_to_clients, 
-        trigger = 'cron', 
-        day_of_week = '0,1,2,3,4,5,6', 
-        # hour = 16, 
-        # minute = 20,
-        minute = '*',    # testing
-        start_date = datetime.datetime.now()
-    )
-    scheduler.start()
+    # scheduler.add_job(
+    #     App.dispatch_to_clients, 
+    #     trigger = 'cron', 
+    #     day_of_week = '0,1,2,3,4,5,6', 
+    #     # hour = 16, 
+    #     # minute = 20,
+    #     minute = '*',    # testing
+    #     start_date = datetime.datetime.now()
+    # )
+    # scheduler.start()
     
     dp = Dispatcher(storage = MemoryStorage())
     [dp.include_router(router) for router in (

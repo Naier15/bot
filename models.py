@@ -5,17 +5,14 @@ from property.models import Buildings, MainPhotos
 
 
 class SeenPhoto(models.Model):
-    photo_id = models.CharField(max_length = 12, verbose_name = 'Чат', blank = False, unique = True)
-    send_keys = models.DateField(verbose_name = 'Выдача ключей', blank = True, null = True)
-    user_profile = models.OneToOneField(UserProfile, on_delete = models.CASCADE)
-    is_registed = models.BooleanField(verbose_name = 'Зарегистрирован', default = False)
-    building = models.ManyToManyField(Buildings, verbose_name = 'Дом', blank = True)
+    building = models.ForeignKey(Buildings, on_delete = models.CASCADE, verbose_name = 'Дом', blank = True)
+    photo = models.ForeignKey(MainPhotos, on_delete = models.CASCADE, verbose_name = 'Ссылка на фото', blank = True)
 
     def __str__(self):
-        return f'{self.chat_id} ({self.user_profile.user.username})'
+        return f'{self.building.id} ({self.photo.main_img})'
 
     class Meta:
-        verbose_name_plural = 'telegram пользователи'
+        verbose_name_plural = 'Просмотренные фото'
 
 
 class TgUser(models.Model):

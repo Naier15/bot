@@ -9,7 +9,7 @@ from aiogram import types
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile
 from property.models import City, Property, Buildings, MainPhotos, CheckTermsPassKeys
-from bot.models import TgUser
+from bot.models import TgUser, SeenPhoto
 
 
 class Database:
@@ -42,7 +42,7 @@ class Database:
         return buildings
     
     async def get_subscription_data(self, id: str) -> dict:
-        building = Buildings.objects.filter(id = int(id)).first()
+        building = await Buildings.objects.aget(id = int(id))
         property_id = building.fk_property.pk
         property_name = building.fk_property.name
         slug = building.fk_property.slug
@@ -53,7 +53,8 @@ class Database:
         photos = []
         for photo in main_photos:
             path = photo.main_img.name.replace('jpeg', 'webp').replace('jpg', 'webp')
-            photos.append(types.InputMediaPhoto(media = f'{Config().DJANGO_HOST}media/{path}'))
+            # photos.append(types.InputMediaPhoto(media = f'{Config().DJANGO_HOST}media/{path}'))
+            photos.append((photo.id, path))
 
         stage = building.build_stage
         if stage == 'b':
@@ -74,8 +75,23 @@ class Database:
         }
         return building
     
+    async def make_photo_seen(self, chat_id: str, building_id: int, photo_id: int) -> None:
+        building = await Buildings.objects.aget(id = building_id)
+        photo = await MainPhotos.objects.aget(id = photo_id)
+        seen_photo = await SeenPhoto.objects.acreate(photo = photo, building = building)
+        user = await TgUser.objects.aget(chat_id = chat_id)
+        await user.seen_photos.aadd(seen_photo)
+
+    async def check_seen_photos(self, chat_id: str, building_id: str, photos: list[int]) -> list[str]:
+        user = await TgUser.objects.aget(chat_id = chat_id)
+        seen_photos = user.seen_photos.filter(building__id = building_id) & user.seen_photos.filter(photo__id__in = photos).all()
+        for photo in seen_photos:
+            while photo.photo.id in photos:
+                photos.remove(photo.photo.id)
+        return photos
+    
     async def get_temp_user(self, chat_id: str) -> Optional[TgUser]:
-        return TgUser.objects.filter(chat_id = chat_id).first()
+        return await TgUser.objects.aget(chat_id = chat_id)
     
     async def create_temp_user(self, chat_id: str, phone_number: str) -> None:
         alphabet = string.ascii_letters + string.digits
@@ -95,7 +111,7 @@ class Database:
             return True
         
     async def create_user(self, chat_id: str, login: str, password: str, email: Optional[str]) -> None:
-        tg_user = TgUser.objects.filter(chat_id = chat_id).first()
+        tg_user = await TgUser.objects.aget(chat_id = chat_id)
         tg_user.user_profile.user.username = login
         tg_user.is_registed = True
         if email:
@@ -105,24 +121,24 @@ class Database:
         await tg_user.asave()
     
     async def get_user(self, chat_id: str) -> Optional[TgUser]:
-        tg_user = TgUser.objects.filter(chat_id = chat_id).first()
+        tg_user = await TgUser.objects.aget(chat_id = chat_id)
         return tg_user
     
     async def save_subscription(self, chat_id: str, building_id: str) -> None:
-        tg_user = TgUser.objects.filter(chat_id = chat_id).first()
+        tg_user = await TgUser.objects.aget(chat_id = chat_id)
         if not tg_user:
             return
-        building = Buildings.objects.filter(id = building_id).first()
+        building = await Buildings.objects.aget(id = building_id)
         if await tg_user.building.acontains(building):
             return
         await tg_user.building.aadd(building)
         await tg_user.asave()
 
     async def remove_subscription(self, chat_id: str, building_id: str) -> None:
-        tg_user = TgUser.objects.filter(chat_id = chat_id).first()
+        tg_user = await TgUser.objects.aget(chat_id = chat_id)
         if not tg_user:
             return
-        building = Buildings.objects.filter(id = building_id).first()
+        building = await Buildings.objects.aget(id = building_id)
         if not await tg_user.building.acontains(building):
             return
         await tg_user.building.aremove(building)
@@ -133,5 +149,3 @@ class Database:
         async for user in TgUser.objects.all():
             users.append(user.chat_id)
         return users
-
-        

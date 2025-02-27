@@ -73,9 +73,7 @@ class Subscription:
         self.date_info = data['date_info']
         return True
     
-    async def send_info(self, msg: Optional[types.Message] = None, chat_id: Optional[int] = None) -> None:
-        if msg is None and chat_id is None:
-            raise Exception('Subscription.send_info - Не передали ни одного параметра')
+    async def send_info(self, chat_id: int, is_dispatch: bool = False) -> None:
         answer = (
             f'{self.property_name}'
             f'\n<a href="{self.url}">Сайт ЖК</a>'
@@ -84,24 +82,23 @@ class Subscription:
             f'\nПеренос сроков: {self.date_info}'
             # f'\nВсе фото и видео по <a href="">ссылке</a>'
         )
-        if msg:
-            await msg.answer(
-                answer,
-                reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
-            )
-            # print(self.photos)
-            try:
-                await msg.answer_media_group(self.photos)
-            except:
-                pass
-            return 
-        if chat_id:
-            await App.bot.send_message(chat_id, answer, reply_markup = App.menu())
-            # print(self.photos)
-            try:
-                await App.bot.send_media_group(chat_id, self.photos)
-            except:
-                pass
+
+        photos = await self.database.check_seen_photos(chat_id, self.building_id, [id for id, path in self.photos])
+        self.photos = [url for id, url in self.photos if id in photos]
+        photos = []  
+        for url in self.photos:
+            photos.append(types.InputMediaPhoto(media = f'{Config().DJANGO_HOST}media/{url}'))
+
+        await App.bot.send_message(
+            chat_id, 
+            answer, 
+            reply_markup = App.menu() if is_dispatch else Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
+        )
+        print(self.photos)
+        try:
+            await App.bot.send_media_group(chat_id, photos)
+        except:
+            pass
 
 
 class User:
@@ -309,4 +306,4 @@ class App:
             await user.sync(chat_id)
 
             for subscription in user.subscriptions:
-                await subscription.send_info(chat_id = user.id)
+                await subscription.send_info(user.id, is_dispatch = True)

@@ -103,7 +103,7 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
         return await menu(call.message, state)
     else:
         subscription = [x for x in App.user.subscriptions if x.building_id == call.data][0]
-        await subscription.send_info(call.message)
+        await subscription.send_info(call.from_user.id)
 
 @log
 @router.message(SubscriptionPage.menu)
@@ -119,5 +119,5 @@ async def choice(msg: types.Message, state: FSMContext):
         from .profile import ProfilePage, edit_login
         
         await App.go_back(state)
-        await App.set_state(ProfilePage.login, state)
+        await App.set_state(ProfilePage.start, state)
         return await edit_login(msg, state)
