@@ -103,7 +103,7 @@ def connect_django(path_to_django: str):
 # Логгирование
 def log_it(chat_id: int):
     def inner(func: Callable, info: Optional[str] = None):
-        print(os.path.abspath(inspect.getfile(func)), func.__name__)
+        print(chat_id, os.path.abspath(inspect.getfile(func)), func.__name__)
         logger = logging.getLogger(os.path.abspath(inspect.getfile(func)))
         message = f'{chat_id} - {func.__name__}'
         if info:

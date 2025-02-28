@@ -181,9 +181,9 @@ class User:
     async def sync(self, chat_id: int) -> None:
         if self.is_sync:
             return
+        
         if not self.id:
             self.id = chat_id
-
         tg_user = await self.database.get_user(self.id)
         if not tg_user:
             return
@@ -200,7 +200,7 @@ class User:
         [await x.sync() for x in self.subscriptions]
         [x.photos for x in self.subscriptions]
         self.is_sync = True
-        App.log = log_it(self.user.id)
+        App.log = log_it(self.id)
 
     # Отчистка данных
     async def clear_data(self) -> None:
