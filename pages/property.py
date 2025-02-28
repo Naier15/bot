@@ -16,6 +16,7 @@ class PropertyPage(StatesGroup):
     property = State()
     building = State()
 
+# Раздел Новая подписка - выбор города
 @router.message(F.text == text.Btn.NEW_SUBSCRIPTION.value)
 async def start(msg: types.Message, state: FSMContext):
     App.log(start) 
@@ -33,6 +34,7 @@ async def start(msg: types.Message, state: FSMContext):
     )
     await App.set_state(PropertyPage.city, state)
 
+# Кнопки навигации - влево, вправо, в меню, назад 
 @router.callback_query(F.data.in_(['next', 'prev', 'page', 'menu', 'back']))
 async def navigation(call: types.CallbackQuery, state: FSMContext):
     App.log(navigation) 
@@ -59,11 +61,13 @@ async def navigation(call: types.CallbackQuery, state: FSMContext):
     if buttons:
         await call.message.edit_reply_markup(reply_markup = buttons)
 
+# Ошибка выбора города
 @router.message(PropertyPage.city, F.text)
 async def city_error(msg: types.Message, state: FSMContext):
     App.log(city_error) 
     await msg.answer(text.choose_city_error)
 
+# Сохранение города и выбор ЖК
 @router.callback_query(PropertyPage.city, F.data)
 async def city(call: types.CallbackQuery, state: FSMContext):
     App.log(city) 
@@ -87,6 +91,7 @@ async def city(call: types.CallbackQuery, state: FSMContext):
     )
     await App.set_state(PropertyPage.property, state)
 
+# Ошибка выбора ЖК
 @router.message(PropertyPage.property, F.text)
 async def property_error(msg: types.Message, state: FSMContext):
     App.log(property_error) 
@@ -101,6 +106,7 @@ async def property_error(msg: types.Message, state: FSMContext):
         reply_markup = buttons
     )
 
+# Сохранение ЖК и выбор дома (если домов в ЖК более одного)
 @router.callback_query(PropertyPage.property, F.data)
 async def property(call: types.CallbackQuery, state: FSMContext):
     App.log(property) 
@@ -122,11 +128,13 @@ async def property(call: types.CallbackQuery, state: FSMContext):
         )
         await App.set_state(PropertyPage.building, state)
 
+# Ошибка выбора дома
 @router.message(PropertyPage.building, F.text)
 async def buidling_error(msg: types.Message):
     App.log(buidling_error) 
     await msg.answer(text.choose_house_error)
 
+# Сохранение дома
 @router.callback_query(PropertyPage.building, F.data)
 async def building(call: types.CallbackQuery, state: FSMContext):
     App.log(building) 
@@ -134,6 +142,7 @@ async def building(call: types.CallbackQuery, state: FSMContext):
         return
     await success(call, state)
 
+# Завершение подписки
 async def success(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer(text.subscription_success)
     await App.save_subscription()

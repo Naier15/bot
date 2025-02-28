@@ -15,6 +15,7 @@ class ProfilePage(StatesGroup):
     password = State()
     email = State()
     
+# Раздел Профиль - Главное меню
 @router.message(F.text == text.Btn.PROFILE.value)
 async def main(msg: types.Message, state: FSMContext):   
     App.log(main) 
@@ -27,6 +28,7 @@ async def main(msg: types.Message, state: FSMContext):
     )
     await App.set_state(ProfilePage.start, state)
 
+# Создание профиля и запрос логина
 @router.message(ProfilePage.start, F.text == text.Btn.EDIT.value)
 async def edit_login(msg: types.Message, state: FSMContext):
     App.log(edit_login) 
@@ -38,6 +40,7 @@ async def edit_login(msg: types.Message, state: FSMContext):
         )
     )
 
+# Сохранение логина и запрос пароля
 @router.message(ProfilePage.start)
 async def edit_password(msg: types.Message, state: FSMContext):
     App.log(edit_password) 
@@ -60,6 +63,7 @@ async def edit_password(msg: types.Message, state: FSMContext):
     )
     await App.set_state(ProfilePage.login, state)
 
+# Сохранение пароля и запрос email или пропустить
 @router.message(ProfilePage.login)
 async def edit_email(msg: types.Message, state: FSMContext):
     App.log(edit_email) 
@@ -81,6 +85,7 @@ async def edit_email(msg: types.Message, state: FSMContext):
     )
     await App.set_state(ProfilePage.password, state)
 
+# Предложение подписки или заверщение регистрации
 @router.message(ProfilePage.password)
 async def subscribe_or_finish(msg: types.Message, state: FSMContext):
     App.log(subscribe_or_finish) 
@@ -106,6 +111,7 @@ async def subscribe_or_finish(msg: types.Message, state: FSMContext):
     )
     await App.set_state(ProfilePage.email, state)
 
+# Завершение регистрации
 @router.message(ProfilePage.email)
 async def finish(msg: types.Message, state: FSMContext):  
     App.log(finish)  

@@ -13,6 +13,7 @@ class SubscriptionPage(StatesGroup):
     list = State()
     remove = State()
 
+# Раздел Подписки - главное меню
 @router.message(F.text == text.Btn.SUBSCRIPTION.value)
 async def menu(msg: types.Message, state: FSMContext):
     App.log(menu) 
@@ -39,6 +40,7 @@ async def menu(msg: types.Message, state: FSMContext):
         ])
     )
     
+# Список всех подписок
 @router.message(SubscriptionPage.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
 async def list(msg: types.Message, state: FSMContext):
     App.log(list) 
@@ -56,6 +58,7 @@ async def list(msg: types.Message, state: FSMContext):
         )
     )
 
+# Удаление подписки
 @router.message(SubscriptionPage.menu, F.text == text.Btn.REMOVE_SUBSCRIPTION.value)
 async def remove(msg: types.Message, state: FSMContext):
     App.log(remove) 
@@ -75,11 +78,13 @@ async def remove(msg: types.Message, state: FSMContext):
     )
     await App.set_state(SubscriptionPage.remove, state)
 
+# Ошибка удаления подписки
 @router.message(SubscriptionPage.remove, F.text)
 async def remove_error(msg: types.Message, state: FSMContext):
     App.log(remove_error)
     await msg.answer(text.choose_property_error)
 
+# Удаление подписки и возвращение в главное меню раздела Подписки
 @router.callback_query(SubscriptionPage.remove, F.data)
 async def remove_result(call: types.CallbackQuery, state: FSMContext):
     App.log(remove_result)
@@ -97,6 +102,7 @@ async def remove_result(call: types.CallbackQuery, state: FSMContext):
     await App.go_back(state)
     await menu(call.message, state)
 
+# Карточка подписки ЖК
 @router.callback_query(SubscriptionPage.menu)
 async def subscription_card(call: types.CallbackQuery, state: FSMContext):
     App.log(subscription_card)
@@ -106,6 +112,7 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
         subscription = [x for x in App.user.subscriptions if x.building_id == call.data][0]
         await subscription.send_info(call.from_user.id)
 
+# Выбор кнопок меню
 @router.message(SubscriptionPage.menu)
 async def choice(msg: types.Message, state: FSMContext):
     App.log(choice)

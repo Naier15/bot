@@ -5,6 +5,7 @@ from app import text, Markup, App
 
 router = Router()
 
+# Раздел Каталог квартир
 @router.message(F.text == text.Btn.FLATS.value)
 async def flats(msg: types.Message):
     App.log(flats)
@@ -15,6 +16,7 @@ async def flats(msg: types.Message):
         reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
     )
 
+# Раздел Помещения для офиса
 @router.message(F.text == text.Btn.OFFICES.value)
 async def offices(msg: types.Message):
     App.log(offices)

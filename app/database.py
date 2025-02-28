@@ -11,7 +11,9 @@ from property.models import City, Property, Buildings, MainPhotos, CheckTermsPas
 from bot.models import TgUser, SeenPhoto
 
 
+# Все запросы к базе данных
 class Database:
+    # Получение городов
     async def get_cities(self) -> list[dict]:
         cities = []
         async for x in City.objects.filter(event = False).order_by('city_name'):
@@ -22,6 +24,7 @@ class Database:
             })
         return cities
 
+    # Получение ЖК по городу
     async def get_properties(self, city_id: str) -> list:
         properties = []
         async for x in Property.objects.filter(city_id = int(city_id)).order_by('name'):
@@ -31,6 +34,7 @@ class Database:
             })
         return properties
     
+    # Получение зданий по ЖК
     async def get_buildings(self, property_id: str) -> list:
         buildings = []
         async for x in Buildings.objects.filter(fk_property = int(property_id)).order_by('num_dom'):
@@ -40,15 +44,16 @@ class Database:
             })
         return buildings
     
-    async def get_subscription_data(self, id: str) -> dict:
-        building = await Buildings.objects.aget(id = int(id))
+    # Данные по подписке на здание
+    async def get_subscription_data(self, building_id: str) -> dict:
+        building = await Buildings.objects.aget(id = int(building_id))
         property_id = building.fk_property.pk
         property_name = building.fk_property.name
         slug = building.fk_property.slug
         city = building.fk_property.city.city_slug
         pass_keys = CheckTermsPassKeys.objects.filter(fk_object = building).first()
         
-        main_photos = MainPhotos.objects.filter(fk_building_id = int(id)).order_by('-id')[:1]
+        main_photos = MainPhotos.objects.filter(fk_building_id = int(building_id)).order_by('-id')[:1]
         photos = []
         for photo in main_photos:
             path = photo.main_img.name.replace('jpeg', 'webp').replace('jpg', 'webp')
@@ -63,7 +68,7 @@ class Database:
             stage = 'Долгострой'
         
         building = {
-            'id': str(building.id),
+            'id': building_id,
             'property_name': property_name,
             'url': f'{Config().DJANGO_HOST}property/{city}/{property_id}/{slug}/',
             'photos': photos,
@@ -73,6 +78,7 @@ class Database:
         }
         return building
     
+    # Отметить, что фото было уже просмотрено в ежедневной рассылке
     async def make_photo_seen(self, chat_id: str, building_id: int, photo_id: int) -> None:
         building = await Buildings.objects.aget(id = building_id)
         photo = await MainPhotos.objects.aget(id = photo_id)
@@ -80,6 +86,7 @@ class Database:
         user = await TgUser.objects.aget(chat_id = chat_id)
         await user.seen_photos.aadd(seen_photo)
 
+    # Отфильтровать еще не просмотренные фото
     async def filter_unseen_photos(self, chat_id: str, building_id: str, photos: list[int]) -> list[str]:
         user = await TgUser.objects.aget(chat_id = chat_id)
         seen_photos = user.seen_photos.filter(building__id = building_id) & user.seen_photos.filter(photo__id__in = photos)
@@ -88,13 +95,14 @@ class Database:
                 photos.remove(photo.photo.id)
         return photos
     
+    # Получить временную запись пользователя
     async def get_temp_user(self, chat_id: str) -> Optional[TgUser]:
         try:
             return await TgUser.objects.aget(chat_id = chat_id)
         except TgUser.DoesNotExist:
             return None
         
-    
+    # Создать временного пользователя, чтобы связать с UserProfile
     async def create_temp_user(self, chat_id: str, phone_number: str) -> None:
         alphabet = string.ascii_letters + string.digits
         temp_login = 'temp_' + ''.join(secrets.choice(alphabet) for _ in range(16))
@@ -105,6 +113,7 @@ class Database:
         profile = await UserProfile.objects.acreate(tel = phone_number, user = user)
         await TgUser.objects.acreate(chat_id = chat_id, user_profile = profile)
 
+    # Проверка, что сможем добавить нового пользователя
     async def is_user_valid(self, username: str) -> bool:
         users = DjUser.objects.filter(username = username).all()
         if len(users) > 0:
@@ -112,6 +121,7 @@ class Database:
         elif len(users) == 0:
             return True
         
+    # Создание постоянного пользователя
     async def create_user(self, chat_id: str, login: str, password: str, email: Optional[str]) -> None:
         tg_user = await TgUser.objects.aget(chat_id = chat_id)
         tg_user.user_profile.user.username = login
@@ -122,10 +132,12 @@ class Database:
         await tg_user.user_profile.user.asave()
         await tg_user.asave()
     
+    # Получение постоянного пользователя
     async def get_user(self, chat_id: str) -> Optional[TgUser]:
         tg_user = await TgUser.objects.aget(chat_id = chat_id)
         return tg_user
     
+    # Сохранить подписку пользователя
     async def save_subscription(self, chat_id: str, building_id: str) -> None:
         tg_user = await TgUser.objects.aget(chat_id = chat_id)
         if not tg_user:
@@ -136,6 +148,7 @@ class Database:
         await tg_user.building.aadd(building)
         await tg_user.asave()
 
+    # Удалить подписку у пользователя
     async def remove_subscription(self, chat_id: str, building_id: str) -> None:
         tg_user = await TgUser.objects.aget(chat_id = chat_id)
         if not tg_user:
@@ -146,6 +159,7 @@ class Database:
         await tg_user.building.aremove(building)
         await tg_user.asave()
         
+    # Ежедневная рассылка пользователям новостей
     async def clients_dispatch(self) -> list[int]:
         users = []
         async for user in TgUser.objects.all():

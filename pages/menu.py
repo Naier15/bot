@@ -7,6 +7,7 @@ from app import text, Markup, App
 
 router = Router()
 
+# Начало 
 @router.message(CommandStart())
 async def start(msg: types.Message, state: FSMContext):
     App.log(start)
@@ -16,6 +17,7 @@ async def start(msg: types.Message, state: FSMContext):
         reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = 'Разрешить', request_contact = True)] ])
     )
 
+# Получение номера телефона
 @router.message(F.contact)
 async def get_contact(msg: types.Message, state: FSMContext):
     App.log(get_contact)
@@ -28,6 +30,7 @@ async def get_contact(msg: types.Message, state: FSMContext):
             reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = 'Разрешить', request_contact = True)] ])
         )
 
+# Раздел Помощь
 @router.message(F.text == text.Btn.HELP.value)
 async def help(msg: types.Message):
     App.log(help)
@@ -36,6 +39,7 @@ async def help(msg: types.Message):
         reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
     )
 
+# Триггер на кнопки Назад и Пропустить
 @router.message(F.text.in_([text.Btn.BACK.value, text.Btn.SKIP.value]))
 async def back(msg: types.Message, state: FSMContext):
     App.log(back)
@@ -43,6 +47,7 @@ async def back(msg: types.Message, state: FSMContext):
     if not next_page:
         await get_menu(msg, state)
 
+# Команда меню и дургие непонятные запросы
 @router.message(Command('menu'))
 @router.message(F.text)
 async def get_menu(msg: types.Message, state: FSMContext):
