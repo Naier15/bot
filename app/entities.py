@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from .database import Database
-from .utils import Markup
+from .utils import Markup, log_it
 from . import text
 from config import Config
 
@@ -83,22 +83,25 @@ class Subscription:
             # f'\nВсе фото и видео по <a href="">ссылке</a>'
         )
 
-        photos = await self.database.check_seen_photos(chat_id, self.building_id, [id for id, path in self.photos])
-        self.photos = [url for id, url in self.photos if id in photos]
-        photos = []  
-        for url in self.photos:
-            photos.append(types.InputMediaPhoto(media = f'{Config().DJANGO_HOST}media/{url}'))
+        photo_ids = [id for id, _ in self.photos]
+        if is_dispatch:
+            unseen_photos = await self.database.filter_unseen_photos(chat_id, self.building_id, photo_ids) 
+            [await self.database.make_photo_seen(chat_id, self.building_id, photo_id) for photo_id in photo_ids]
+        else:
+            unseen_photos = photo_ids
+        photos_to_show = [url for id, url in self.photos if id in unseen_photos]        
+        photos_to_show = [types.InputMediaPhoto(media = f'{Config().DJANGO_HOST}media/{url}') for url in photos_to_show]
 
-        await App.bot.send_message(
-            chat_id, 
-            answer, 
-            reply_markup = App.menu() if is_dispatch else Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
-        )
-        print(self.photos)
-        try:
-            await App.bot.send_media_group(chat_id, photos)
-        except:
-            pass
+        if len(photos_to_show) > 0:
+            await App.bot.send_message(
+                chat_id, 
+                answer, 
+                reply_markup = App.menu() if is_dispatch else Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
+            )
+            try:
+                await App.bot.send_media_group(chat_id, photos_to_show)
+            except:
+                pass
 
 
 class User:
@@ -225,6 +228,7 @@ class App:
     database: Database = Database()
     user: User = User(database)
     subscription: Optional[Subscription]
+    log = log_it(user.id)
 
     @staticmethod
     def new_subscription() -> Subscription:
@@ -262,7 +266,6 @@ class App:
         App.user.password = None
         App.history.clear()
         await state.clear()
-        print('--History cleared--')
     
     @staticmethod
     async def replace_state(page: State, state: FSMContext) -> None:
@@ -270,7 +273,7 @@ class App:
             return
         App.history[-1] = page
         await state.set_state(page)
-        print(f'--History {App.history}--')
+        # print(f'--History {App.history}--')
 
     @staticmethod
     async def set_state(page: State, state: FSMContext) -> None:
@@ -278,7 +281,7 @@ class App:
             return
         App.history.append(page)
         await state.set_state(page)
-        print(f'--History {App.history}--')
+        # print(f'--History {App.history}--')
 
     @staticmethod
     async def get_state() -> Optional[State]:

@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from .menu import get_menu
-from app import text, Markup, App, log
+from app import text, Markup, App
 
 
 router = Router()
@@ -13,9 +13,9 @@ class SubscriptionPage(StatesGroup):
     list = State()
     remove = State()
 
-@log
 @router.message(F.text == text.Btn.SUBSCRIPTION.value)
 async def menu(msg: types.Message, state: FSMContext):
+    App.log(menu) 
     await App.set_state(SubscriptionPage.menu, state)
     if not App.user.is_registed:
         await App.user.sync(msg.from_user.id)
@@ -41,6 +41,7 @@ async def menu(msg: types.Message, state: FSMContext):
     
 @router.message(SubscriptionPage.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
 async def list(msg: types.Message, state: FSMContext):
+    App.log(list) 
     subscription_btns = [
         [types.InlineKeyboardButton(text = sub.property_name, callback_data = sub.building_id)]
         for sub in App.user.subscriptions
@@ -55,9 +56,9 @@ async def list(msg: types.Message, state: FSMContext):
         )
     )
 
-@log
 @router.message(SubscriptionPage.menu, F.text == text.Btn.REMOVE_SUBSCRIPTION.value)
 async def remove(msg: types.Message, state: FSMContext):
+    App.log(remove) 
     subscription_btns = [
         [types.InlineKeyboardButton(text = sub.property_name, callback_data = sub.building_id)]
         for sub in App.user.subscriptions
@@ -74,14 +75,14 @@ async def remove(msg: types.Message, state: FSMContext):
     )
     await App.set_state(SubscriptionPage.remove, state)
 
-@log
 @router.message(SubscriptionPage.remove, F.text)
 async def remove_error(msg: types.Message, state: FSMContext):
+    App.log(remove_error)
     await msg.answer(text.choose_property_error)
 
-@log
 @router.callback_query(SubscriptionPage.remove, F.data)
 async def remove_result(call: types.CallbackQuery, state: FSMContext):
+    App.log(remove_result)
     if call.data == 'back':
         await App.go_back(state)
         return await menu(call.message, state)
@@ -96,18 +97,18 @@ async def remove_result(call: types.CallbackQuery, state: FSMContext):
     await App.go_back(state)
     await menu(call.message, state)
 
-@log
 @router.callback_query(SubscriptionPage.menu)
 async def subscription_card(call: types.CallbackQuery, state: FSMContext):
+    App.log(subscription_card)
     if call.data == 'back':
         return await menu(call.message, state)
     else:
         subscription = [x for x in App.user.subscriptions if x.building_id == call.data][0]
         await subscription.send_info(call.from_user.id)
 
-@log
 @router.message(SubscriptionPage.menu)
 async def choice(msg: types.Message, state: FSMContext):
+    App.log(choice)
     if msg.text == text.Btn.TO_MENU.value:
         return await get_menu(msg, state)
     elif msg.text == text.Btn.NEW_SUBSCRIPTION.value:

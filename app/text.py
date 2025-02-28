@@ -38,7 +38,7 @@ introduction = (
 )
 
 help = (
-    f'<a href="{manager_bot}"><b>Консультант по новостойкам Bashni.pro</b></a>'
+    f'<a href="{manager_bot}"><b>Консультант по новостойкам Bashni.pro</b></a>\n'
     'Бот, в котором можно задать вопросы менеджеру\n'
 )
 

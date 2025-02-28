@@ -5,7 +5,6 @@ from config import Config
 from .utils import connect_django
 connect_django('..')
 
-from aiogram import types
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile
 from property.models import City, Property, Buildings, MainPhotos, CheckTermsPassKeys
@@ -53,7 +52,6 @@ class Database:
         photos = []
         for photo in main_photos:
             path = photo.main_img.name.replace('jpeg', 'webp').replace('jpg', 'webp')
-            # photos.append(types.InputMediaPhoto(media = f'{Config().DJANGO_HOST}media/{path}'))
             photos.append((photo.id, path))
 
         stage = building.build_stage
@@ -82,16 +80,20 @@ class Database:
         user = await TgUser.objects.aget(chat_id = chat_id)
         await user.seen_photos.aadd(seen_photo)
 
-    async def check_seen_photos(self, chat_id: str, building_id: str, photos: list[int]) -> list[str]:
+    async def filter_unseen_photos(self, chat_id: str, building_id: str, photos: list[int]) -> list[str]:
         user = await TgUser.objects.aget(chat_id = chat_id)
-        seen_photos = user.seen_photos.filter(building__id = building_id) & user.seen_photos.filter(photo__id__in = photos).all()
+        seen_photos = user.seen_photos.filter(building__id = building_id) & user.seen_photos.filter(photo__id__in = photos)
         for photo in seen_photos:
             while photo.photo.id in photos:
                 photos.remove(photo.photo.id)
         return photos
     
     async def get_temp_user(self, chat_id: str) -> Optional[TgUser]:
-        return await TgUser.objects.aget(chat_id = chat_id)
+        try:
+            return await TgUser.objects.aget(chat_id = chat_id)
+        except TgUser.DoesNotExist:
+            return None
+        
     
     async def create_temp_user(self, chat_id: str, phone_number: str) -> None:
         alphabet = string.ascii_letters + string.digits
