@@ -17,6 +17,13 @@
 | `REGION = Asia/Vladivostok` | Необязательная | Часовой пояс, по времени которого будет происходить ежедневная рассылка новостей |
 <br/><br/>
 
+| Command | Description |
+| --- | --- |
+| git status | List all new or modified files |
+| git diff | Show file differences that haven't been staged |
+
+<br/><br/>
+
 #### Запуск бота:
 - `cd bot` - перейти в папку с ботом
 - `pip install -U pip` - обновить pip
