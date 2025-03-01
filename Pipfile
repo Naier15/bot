@@ -5,11 +5,9 @@ name = "pypi"
 
 [packages]
 psycopg2-binary = "*"
-dependency-injector = "*"
 aiogram = "*"
 python-dotenv = "*"
 apscheduler = "*"
-emoji = "*"
 django = "*"
 pillow = "*"
 django-ckeditor = "*"
