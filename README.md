@@ -17,10 +17,10 @@
 | `REGION = Asia/Vladivostok` | Необязательная | Часовой пояс, по времени которого будет происходить ежедневная рассылка новостей |
 <br/><br/>
 
-| Command | Description |
-| --- | --- |
-| git status | List all new or modified files |
-| git diff | Show file differences that haven't been staged |
+| Название переменной | (Не)обязательная | Определение |
+| --- | --- | --- |
+| git status | List all new or modified files | ddd |
+| git diff | Show file differences that haven't been staged | ddd |
 
 <br/><br/>
 
