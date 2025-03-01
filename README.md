@@ -18,7 +18,7 @@
 <br/><br/>
 
 | Название переменной | (Не)обязательная | Определение |
-| --- | --- | --- |
+| --- | ---- | --- |
 | git status | List all new or modified files | ddd |
 | git diff | Show file differences that haven't been staged | ddd |
 
