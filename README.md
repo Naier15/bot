@@ -18,9 +18,9 @@
 <br/><br/>
 
 | Название переменной | (Не)обязательная | Определение |
-| --- | ---- | --- |
-| git status | List all new or modified files | ddd |
-| git diff | Show file differences that haven't been staged | ddd |
+| --- | --- | ------ |
+| `BOT_TOKEN = ...` | [+] | Токен телеграм бота, запросы которого будет обслуживать приложение |
+| `MANAGER_BOT_LINK = https://t.me/bashnipro_bot` | [ ] | Телеграм бот, на который будет указывать приложение в разделе Помощь |
 
 <br/><br/>
 
