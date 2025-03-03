@@ -3,7 +3,7 @@ import secrets, string
 
 from config import Config
 from .utils import connect_django
-connect_django('..')
+connect_django(Config().DJANGO_PATH)
 
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile

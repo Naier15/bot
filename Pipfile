@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-psycopg2-binary = "*"
 aiogram = "*"
 python-dotenv = "*"
 apscheduler = "*"
@@ -20,6 +19,7 @@ django-el-pagination = "*"
 django-yaturbo = "*"
 regex = "*"
 fuzzywuzzy = {extras = ["speedup"], version = "*"}
+psycopg2-binary = "*"
 
 [dev-packages]
 

@@ -52,7 +52,6 @@ async def back(msg: types.Message, state: FSMContext):
 @router.message(F.text)
 async def get_menu(msg: types.Message, state: FSMContext):
     App.log(get_menu)
-    # print(App.history)
     await App.clear_history(state)
     await App.user.sync(msg.from_user.id)
     await msg.answer(
