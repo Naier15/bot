@@ -101,12 +101,10 @@ def connect_django(path_to_django: str):
 	print(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
 # Логгирование
-def log_it(chat_id: int):
-    def inner(func: Callable, info: Optional[str] = None):
-        print(chat_id, os.path.abspath(inspect.getfile(func)), func.__name__)
-        logger = logging.getLogger(os.path.abspath(inspect.getfile(func)))
-        message = f'{chat_id} - {func.__name__}'
-        if info:
-            message += f' - {info}'
-        logger.info(message)
-    return inner
+def log(func: Callable, info: Optional[str] = None):
+    print(os.path.abspath(inspect.getfile(func)), func.__name__)
+    logger = logging.getLogger(os.path.abspath(inspect.getfile(func)))
+    message = func.__name__
+    if info:
+        message += f' - {info}'
+    logger.info(message)

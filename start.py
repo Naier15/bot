@@ -4,7 +4,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import Config
-from app import App
+from app import App, log
 from pages import menu_router # Страница главного меню и раздел помощь
 from pages import buildings_router # Разделы квартир и офисов
 from pages import profile_router # Раздел профиля, его создания и редактирования
@@ -20,15 +20,15 @@ logging.basicConfig(
 )
 
 async def main():
-    App.log(main)
-
-    await App.bot.delete_webhook(drop_pending_updates = True)  
+    log(main)
+    app = App()
+    await app.bot.delete_webhook(drop_pending_updates = True)  
     commands = [ types.BotCommand(command = 'menu', description = 'В меню') ]
-    await App.bot.set_my_commands(commands, types.BotCommandScopeDefault())
+    await app.bot.set_my_commands(commands, types.BotCommandScopeDefault())
 	
     scheduler = AsyncIOScheduler(timezone = Config().REGION)
     scheduler.add_job(
-        App.dispatch_to_clients, 
+        app.dispatch_to_clients, 
         trigger = 'cron', 
         day_of_week = '0,1,2,3,4,5,6', 
         hour = 16, 
@@ -47,7 +47,7 @@ async def main():
 		menu_router
 	)]
     print('Start')
-    await dp.start_polling(App.bot, allowed_updates = dp.resolve_used_update_types())
+    await dp.start_polling(app.bot, allowed_updates = dp.resolve_used_update_types())
 
 
 if __name__ == '__main__':

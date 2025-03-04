@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from .database import Database
-from .utils import Markup, log_it
+from .utils import Markup
 from . import text
 from config import Config
 
@@ -38,6 +38,23 @@ class Subscription:
     def __str__(self) -> str:
         return f'Subscription(city = {self.city_id}, property = {self.property_id}, building = {self.building_id})'
         
+    # Добавление информации
+    async def set(self, 
+        city_id: Optional[str] = None, 
+        property_id: Optional[str] = None, 
+        building_id: Optional[str] = None
+    ) -> bool:
+        if city_id and len(city_id) > 0:
+            self.city_id = city_id
+            return True
+        if property_id and len(property_id) > 0:
+            self.property_id = property_id
+            return True
+        if building_id and len(building_id) > 0:
+            self.building_id = building_id
+            return True
+        return False
+    
     # Сохранение подписки
     async def save(self, chat_id: str) -> None:
         await self.sync()
@@ -46,7 +63,6 @@ class Subscription:
     # Удаление подписки
     async def remove(self, chat_id: str) -> None:
         await self.database.remove_subscription(chat_id, self.building_id)
-        App.user.subscriptions.remove(self)
 
     # Подтягивание всех данных из базы данных
     async def sync(self) -> bool:
@@ -63,6 +79,7 @@ class Subscription:
     
     # Формирование и отправка сообщения ежедневной подписки
     async def send_info(self, chat_id: int, is_dispatch: bool = False) -> None:
+        await self.sync()
         answer = (
             f'{self.property_name}'
             f'\n<a href="{self.url}">Сайт ЖК</a>'
@@ -125,7 +142,7 @@ class User:
             phone = f'8{phone[2:]}'
 
         if len(phone) == 11:
-            self.id = msg.from_user.id
+            self.id = msg.chat.id
             self.phone = phone
             return True
         else:
@@ -166,8 +183,7 @@ class User:
     # Сохранение в базе временного и постоянного пользователя
     async def save(self, temporary: bool = False) -> Optional[str]:
         if temporary:
-            tg_user = await self.database.get_temp_user(self.id)
-            if not tg_user:
+            if not await self.database.has_temp_user(self.id):
                 await self.database.create_temp_user(self.id, self.phone)
         else:
             is_valid = await self.database.is_user_valid(self.login)
@@ -181,26 +197,26 @@ class User:
     async def sync(self, chat_id: int) -> None:
         if self.is_sync:
             return
-        
         if not self.id:
             self.id = chat_id
-        tg_user = await self.database.get_user(self.id)
+            
+        tg_user = await self.database.get_user(self.id) 
         if not tg_user:
             return
-        self.is_registed = True if tg_user.is_registed else False
         
+        self.is_registed = True if tg_user.is_registed else False
         if not self.phone:
             self.phone = tg_user.user_profile.tel
+
         self.login = tg_user.user_profile.user.username
         self.email = tg_user.user_profile.user.email if tg_user.user_profile.user.email else None
         self.subscriptions = [
-            Subscription(database = App.database, building_id = str(building.id)) 
+            Subscription(database = self.database, building_id = str(building.id)) 
             for building in tg_user.building.all()
         ]
         [await x.sync() for x in self.subscriptions]
         [x.photos for x in self.subscriptions]
         self.is_sync = True
-        App.log = log_it(self.id)
 
     # Отчистка данных
     async def clear_data(self) -> None:
@@ -210,34 +226,42 @@ class User:
 
 # Логика приложения
 class App:
-    history: list[State] = []
-    bot: Bot = Bot(
-        token = Config().BOT_TOKEN, 
-        default = DefaultBotProperties(parse_mode = ParseMode.HTML)
-    )
-    database: Database = Database()
-    user: User = User(database)
-    subscription: Optional[Subscription]
-    log = log_it(user.id)
+    bot: Bot = None
 
-    # Создание новой пустой подписки
-    @staticmethod
-    def new_subscription() -> Subscription:
-        App.subscription = Subscription(database = App.database)
-        return App.subscription
+    def __init__(self, state: Optional[FSMContext] = None) -> Self:
+        if not App.bot:
+            App.bot: Bot = Bot(
+                token = Config().BOT_TOKEN, 
+                default = DefaultBotProperties(parse_mode = ParseMode.HTML)
+            )
+        self.history: list[State] = []
+        self.database: Database = Database()
+        self.user: User = User(self.database)
+        self.subscription: Optional[Subscription]
+        self.instance: Optional[Self] = None
+        self.state = state
 
-    # Добавление текущей подписки в список подписок пользователя
-    @staticmethod
-    async def save_subscription() -> None:
-        found_subscription = [
-            True for sub in App.user.subscriptions 
-            if sub.building_id == App.subscription.building_id
-        ]
-        if not found_subscription:
-            await App.subscription.save(App.user.id)
-            App.user.subscriptions += [App.subscription]
-        App.subscription = None
+    async def __aenter__(self) -> Self:
+        self.instance = await App.get(self.state)
+        return self.instance
     
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        await self.instance.save(self.state)
+        
+    # Получение экземпляра App пользователя
+    @staticmethod
+    async def get(state: FSMContext) -> Self:
+        data = await state.get_data()
+        app = data.get('app')
+        if not app:
+            app = App()
+            await app.save(state)
+        return app
+    
+    # Сохранение экземпляра App пользователя
+    async def save(self, state: FSMContext) -> None:
+        await state.update_data(app = self)
+
     # Кнопки главного меню
     @staticmethod
     def menu() -> types.ReplyKeyboardMarkup:
@@ -253,42 +277,54 @@ class App:
             [types.KeyboardButton(text = text.Btn.HELP.value)]
         ]
         return Markup.bottom_buttons(btns)
+
+    # Создание новой пустой подписки
+    def new_subscription(self) -> Subscription:
+        self.subscription = Subscription(database = self.database)
+        return self.subscription
+
+    # Добавление текущей подписки в список подписок пользователя
+    async def save_subscription(self) -> None:
+        found_subscription = [
+            True for sub in self.user.subscriptions 
+            if sub.building_id == self.subscription.building_id
+        ]
+        if not found_subscription:
+            await self.subscription.save(self.user.id)
+            self.user.subscriptions += [self.subscription]
+        self.subscription = None
     
     # Отчистка истории страниц
-    @staticmethod
-    async def clear_history(state: FSMContext):
-        App.user.password = None
-        App.history.clear()
+    async def clear_history(self, state: FSMContext):
+        self.user.password = None
+        self.history.clear()
         await state.clear()
 
     # Добавление нового состояния в историю
-    @staticmethod
-    async def set_state(page: State, state: FSMContext) -> None:
-        if len(App.history) > 0 and App.history[-1] == page:
+    async def set_state(self, page: State, state: FSMContext) -> None:
+        if len(self.history) > 0 and self.history[-1] == page:
             return
-        App.history.append(page)
+        self.history.append(page)
         await state.set_state(page)
-        # print(f'--History {App.history}--')
+        # print(f'--History {self.history}--')
 
     # Откат последнего состояния и возвращение предыдущего
-    @staticmethod
-    async def go_back(state: FSMContext) -> State:
-        if len(App.history) > 0:
-            App.history.pop()  # Шаг назад
+    async def go_back(self, state: FSMContext) -> State:
+        if len(self.history) > 0:
+            self.history.pop()  # Шаг назад
 
         page = None
-        if len(App.history) > 0:
-            page = App.history[-1] # Получение предыдущего состояния
+        if len(self.history) > 0:
+            page = self.history[-1] # Получение предыдущего состояния
             await state.set_state(page)
-            App.history.pop() # Удаляем и предыдущего состояние, поскольку оно добавится в следующем обработчике
+            self.history.pop() # Удаляем и предыдущего состояние, поскольку оно добавится в следующем обработчике
         return page
     
     # Рассылка клиентам
-    @staticmethod
-    async def dispatch_to_clients() -> None:
-        chats = await App.database.clients_dispatch()
+    async def dispatch_to_clients(self) -> None:
+        chats = await self.database.clients_dispatch()
         for chat_id in chats:
-            user = User(database = App.database)
+            user = User(database = self.database)
             await user.sync(chat_id)
 
             for subscription in user.subscriptions:

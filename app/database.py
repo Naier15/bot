@@ -96,11 +96,12 @@ class Database:
         return photos
     
     # Получить временную запись пользователя
-    async def get_temp_user(self, chat_id: str) -> Optional[TgUser]:
+    async def has_temp_user(self, chat_id: str) -> bool:
         try:
-            return await TgUser.objects.aget(chat_id = chat_id)
+            user = await TgUser.objects.aget(chat_id = chat_id)
+            return True if user else False
         except TgUser.DoesNotExist:
-            return None
+            return False
         
     # Создать временного пользователя, чтобы связать с UserProfile
     async def create_temp_user(self, chat_id: str, phone_number: str) -> None:
