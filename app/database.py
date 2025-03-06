@@ -7,7 +7,7 @@ connect_django(Config().DJANGO_PATH)
 
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile
-from property.models import City, Property, Buildings, MainPhotos, CheckTermsPassKeys
+from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildMonths, BuildingPhotos
 from bot.models import TgUser, SeenPhoto
 
 
@@ -53,10 +53,11 @@ class Database:
         city = building.fk_property.city.city_slug
         pass_keys = CheckTermsPassKeys.objects.filter(fk_object = building).first()
         
-        main_photos = MainPhotos.objects.filter(fk_building_id = int(building_id)).order_by('-id')[:1]
+        last_month = BuildMonths.objects.filter(fk_building = building).order_by('-build_date').first()
+        last_photos = BuildingPhotos.objects.filter(fk_month = last_month).all()
         photos = []
-        for photo in main_photos:
-            path = photo.main_img.name.replace('jpeg', 'webp').replace('jpg', 'webp')
+        for photo in last_photos:
+            path = photo.build_img.name.replace('jpeg', 'webp').replace('jpg', 'webp')
             photos.append((photo.id, path))
 
         stage = building.build_stage
@@ -71,6 +72,7 @@ class Database:
             'id': building_id,
             'property_name': property_name,
             'url': f'{Config().DJANGO_HOST}property/{city}/{property_id}/{slug}/',
+            'photo_url': f'{Config().DJANGO_HOST}property/{city}/{property_id}/format/#building_photo',
             'photos': photos,
             'stage': stage,
             'date_realise': pass_keys.changed_date if pass_keys else 'Не указано',
@@ -81,7 +83,8 @@ class Database:
     # Отметить, что фото было уже просмотрено в ежедневной рассылке
     async def make_photo_seen(self, chat_id: str, building_id: int, photo_id: int) -> None:
         building = await Buildings.objects.aget(id = building_id)
-        photo = await MainPhotos.objects.aget(id = photo_id)
+        photo = await BuildingPhotos.objects.aget(id = photo_id)
+        # photo = await MainPhotos.objects.aget(id = photo_id)
         seen_photo = await SeenPhoto.objects.acreate(photo = photo, building = building)
         user = await TgUser.objects.aget(chat_id = chat_id)
         await user.seen_photos.aadd(seen_photo)

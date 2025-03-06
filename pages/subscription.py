@@ -113,7 +113,6 @@ async def remove_result(call: types.CallbackQuery, state: FSMContext):
 async def subscription_card(call: types.CallbackQuery, state: FSMContext):
     log(subscription_card)
     async with App(state) as app:
-        print(call.data)
         if call.data == 'back': 
             return await menu(call.message, state)
         else:

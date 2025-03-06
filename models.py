@@ -1,15 +1,15 @@
 from django.db import models
 
 from authapp.models import UserProfile
-from property.models import Buildings, MainPhotos
+from property.models import Buildings, BuildingPhotos
 
 
 class SeenPhoto(models.Model):
     building = models.ForeignKey(Buildings, on_delete = models.CASCADE, verbose_name = 'Дом', blank = True)
-    photo = models.ForeignKey(MainPhotos, on_delete = models.CASCADE, verbose_name = 'Ссылка на фото', blank = True)
+    photo = models.ForeignKey(BuildingPhotos, on_delete = models.CASCADE, verbose_name = 'Ссылка на фото', blank = True)
 
     def __str__(self):
-        return f'{self.building.id} ({self.photo.main_img})'
+        return f'{self.building.id} ({self.photo.build_img})'
 
     class Meta:
         verbose_name_plural = 'Просмотренные фото'

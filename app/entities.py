@@ -28,6 +28,7 @@ class Subscription:
         self.property_id: str = property_id
         self.building_id: str = building_id
         self.url: Optional[str] = None
+        self.photo_url: Optional[str] = None
         self.send_keys: str = 'Неизвестно'
         self.property_name: Optional[str] = None
         self.photos: list[types.InputMediaPhoto] = []
@@ -70,6 +71,7 @@ class Subscription:
             return False
         data = await self.database.get_subscription_data(self.building_id)
         self.url = data['url']
+        self.photo_url = data['photo_url']
         self.property_name = data['property_name']
         self.photos = data['photos']
         self.stage = data['stage']
@@ -86,7 +88,7 @@ class Subscription:
             f'\nСтадия строительства: {self.stage}'
             f'\nСдача дома: {self.date_realise}'
             f'\nПеренос сроков: {self.date_info}'
-            # f'\nВсе фото и видео по <a href="">ссылке</a>'
+            f'\nВсе фото и видео по <b><a href="{self.photo_url}">ссылке</a></b>'
         )
 
         photo_ids = [id for id, _ in self.photos]
