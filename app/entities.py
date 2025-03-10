@@ -232,7 +232,6 @@ class User:
         [await x.sync() for x in self.subscriptions]
         [x.photos for x in self.subscriptions]
         self.is_sync = True
-        print('Synced')
         return True
     
     async def push_to_archive(self) -> None:
