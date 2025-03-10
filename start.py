@@ -1,4 +1,4 @@
-import asyncio, datetime, logging
+import asyncio, datetime, logging, os
 from aiogram import Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -13,7 +13,7 @@ from pages import property_router # Раздел добавления новой
 
 
 logging.basicConfig(
-    filename = f'./log.log',
+    filename = os.path.abspath(os.path.join(os.path.dirname(__file__), Config().LOG_FILE)),
     level = logging.INFO, 
     format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     encoding = 'utf-8'
