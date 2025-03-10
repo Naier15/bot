@@ -6,6 +6,7 @@ import fuzzywuzzy
 import fuzzywuzzy.process
 
 from app import text, PageBuilder, App, log
+from .menu import reload_handler
 from .subscription import menu, SubscriptionPage
 
 
@@ -63,8 +64,10 @@ async def navigation(call: types.CallbackQuery, state: FSMContext):
 
 # Ошибка выбора города
 @router.message(PropertyPage.city, F.text)
-async def city_error(msg: types.Message):
+async def city_error(msg: types.Message, state: FSMContext):
     log(city_error) 
+    if await reload_handler(msg, state):
+        return
     await msg.answer(text.choose_city_error)
 
 # Сохранение города и выбор ЖК
@@ -95,7 +98,9 @@ async def city(call: types.CallbackQuery, state: FSMContext):
 # Ошибка выбора ЖК
 @router.message(PropertyPage.property, F.text)
 async def property_error(msg: types.Message, state: FSMContext):
-    log(property_error) 
+    log(property_error)
+    if await reload_handler(msg, state):
+        return  
     async with App(state) as app:
         properties = await app.database.get_properties(app.subscription.city_id)
         results = fuzzywuzzy.process.extract(msg.text, properties, limit = 6)
@@ -133,8 +138,10 @@ async def property(call: types.CallbackQuery, state: FSMContext):
 
 # Ошибка выбора дома
 @router.message(PropertyPage.building, F.text)
-async def buidling_error(msg: types.Message):
-    log(buidling_error) 
+async def buidling_error(msg: types.Message, state: FSMContext):
+    log(buidling_error)
+    if await reload_handler(msg, state):
+        return
     await msg.answer(text.choose_house_error)
 
 # Сохранение дома

@@ -31,7 +31,7 @@ class Subscription:
         self.photo_url: Optional[str] = None
         self.send_keys: str = 'Неизвестно'
         self.property_name: Optional[str] = None
-        self.photos: list[types.InputMediaPhoto] = []
+        self.photos: list[tuple[int, str, str]] = []
         self.stage: Optional[str] = None
         self.date_realise: Optional[str] = None
         self.date_info: Optional[str] = None
@@ -91,14 +91,21 @@ class Subscription:
             f'\nВсе фото и видео по <b><a href="{self.photo_url}">ссылке</a></b>'
         )
 
-        photo_ids = [id for id, _ in self.photos]
+        photo_ids = [id for id, _, _ in self.photos]
         if is_dispatch:
             unseen_photos = await self.database.filter_unseen_photos(chat_id, self.building_id, photo_ids) 
             [await self.database.make_photo_seen(chat_id, self.building_id, photo_id) for photo_id in photo_ids]
         else:
             unseen_photos = photo_ids
-        photos_to_show = [url for id, url in self.photos if id in unseen_photos]        
-        photos_to_show = [types.InputMediaPhoto(media = f'{Config().DJANGO_HOST}media/{url}') for url in photos_to_show]
+        photos_to_show = [photo for photo in self.photos if photo[0] in unseen_photos]        
+        photos_to_show = [
+            types.InputMediaPhoto(
+                media = f'{Config().DJANGO_HOST}media/{url}',
+                caption = month
+            ) 
+            for id, url, month in photos_to_show 
+            if id in unseen_photos
+        ]
 
         if len(photos_to_show) > 0:
             await App.bot.send_message(
@@ -118,8 +125,9 @@ class User:
     is_registed: bool = False
     is_sync: bool = False
     login: Optional[str] = None
-    password: Optional[str]
+    password: Optional[str] = None
     email: Optional[str] = None
+    archive: list[str, str, str] = []
     subscriptions: list[Subscription] = []
 
     def __init__(self, database: Database) -> Self:
@@ -224,13 +232,21 @@ class User:
         [await x.sync() for x in self.subscriptions]
         [x.photos for x in self.subscriptions]
         self.is_sync = True
+        print('Synced')
         return True
+    
+    async def push_to_archive(self) -> None:
+        self.archive = [self.login, self.password, self.email]
+
+    async def pop_from_archive(self) -> None:
+        if len(self.archive) > 0:
+            self.login = self.archive[0]
+            self.password = self.archive[1]
+            self.email = self.archive[2]
 
     # Отчистка данных
     async def clear_data(self) -> None:
-        self.login = None
         self.password = None
-        self.email = None
 
 # Логика приложения
 class App:
@@ -303,8 +319,9 @@ class App:
         self.subscription = None
     
     # Отчистка истории страниц
-    async def clear_history(self, state: FSMContext):
-        self.user.password = None
+    async def clear_history(self, state: FSMContext, with_user: bool = False):
+        if with_user:
+            self.user = User(self.database)
         self.history.clear()
         await state.clear()
 

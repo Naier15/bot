@@ -54,11 +54,11 @@ class Database:
         pass_keys = CheckTermsPassKeys.objects.filter(fk_object = building).first()
         
         last_month = BuildMonths.objects.filter(fk_building = building).order_by('-build_date').first()
-        last_photos = BuildingPhotos.objects.filter(fk_month = last_month).all()
+        last_photos = [BuildingPhotos.objects.filter(fk_month = last_month).last()]
         photos = []
         for photo in last_photos:
             path = photo.build_img.name.replace('jpeg', 'webp').replace('jpg', 'webp')
-            photos.append((photo.id, path))
+            photos.append((photo.id, path, last_month.build_month))
 
         stage = building.build_stage
         if stage == 'b':
@@ -84,7 +84,6 @@ class Database:
     async def make_photo_seen(self, chat_id: str, building_id: int, photo_id: int) -> None:
         building = await Buildings.objects.aget(id = building_id)
         photo = await BuildingPhotos.objects.aget(id = photo_id)
-        # photo = await MainPhotos.objects.aget(id = photo_id)
         seen_photo = await SeenPhoto.objects.acreate(photo = photo, building = building)
         user = await TgUser.objects.aget(chat_id = chat_id)
         await user.seen_photos.aadd(seen_photo)

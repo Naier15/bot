@@ -2,7 +2,7 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from .menu import get_menu
+from .menu import get_menu, reload_handler
 from app import text, Markup, App, log
 
 
@@ -83,8 +83,10 @@ async def remove(msg: types.Message, state: FSMContext):
 
 # Ошибка удаления подписки
 @router.message(SubscriptionPage.remove, F.text)
-async def remove_error(msg: types.Message):
+async def remove_error(msg: types.Message, state: FSMContext):
     log(remove_error)
+    if await reload_handler(msg, state):
+        return
     await msg.answer(text.choose_property_error)
 
 # Удаление подписки и возвращение в главное меню раздела Подписки
@@ -123,6 +125,9 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
 @router.message(SubscriptionPage.menu)
 async def choice(msg: types.Message, state: FSMContext):
     log(choice)
+    if await reload_handler(msg, state):
+        return
+    
     if msg.text == text.Btn.TO_MENU.value:
         return await get_menu(msg, state)
     elif msg.text == text.Btn.NEW_SUBSCRIPTION.value:

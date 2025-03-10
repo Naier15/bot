@@ -12,7 +12,7 @@ router = Router()
 async def start(msg: types.Message, state: FSMContext):
     log(start)
     async with App(state) as app:
-        await app.clear_history(state)
+        await app.clear_history(state, with_user = True)
     await msg.answer(
         text.introduction,
         reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = 'Разрешить', request_contact = True)] ])
@@ -61,4 +61,14 @@ async def get_menu(msg: types.Message, state: FSMContext):
     await msg.answer(
         text.Btn.MENU.value, 
         reply_markup = App.menu()
-    ) 
+    )
+
+async def reload_handler(msg: types.Message, state: FSMContext) -> bool:
+    async with App(state) as app:
+        if msg.text == text.Btn.START.value:
+            print('starting')
+            from .menu import start
+            await app.clear_history(state, with_user = True)
+            await start(msg, state)
+            return True
+    return False

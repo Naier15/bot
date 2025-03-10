@@ -2,8 +2,7 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from .menu import get_menu
-from .property import start
+from .menu import get_menu, reload_handler
 from app import text, Markup, App, log
 
 
@@ -33,6 +32,8 @@ async def main(msg: types.Message, state: FSMContext):
 @router.message(ProfilePage.start, F.text == text.Btn.EDIT.value)
 async def edit_login(msg: types.Message, state: FSMContext):
     log(edit_login) 
+    async with App(state) as app:
+        await app.user.push_to_archive()
     await msg.answer(
         f'{text.login_preview}\nПридумайте логин:\n{text.login_tip}', 
         reply_markup = Markup.bottom_buttons(
@@ -47,7 +48,7 @@ async def edit_password(msg: types.Message, state: FSMContext):
     log(edit_password) 
     async with App(state) as app:
         if msg.text == text.Btn.TO_MENU.value:
-            await app.user.clear_data()
+            await app.user.pop_from_archive()
             return await get_menu(msg, state)
         
         res = await app.user.set_login(msg)
@@ -71,12 +72,13 @@ async def edit_password(msg: types.Message, state: FSMContext):
 # Сохранение пароля и запрос email или пропустить
 @router.message(ProfilePage.login)
 async def edit_email(msg: types.Message, state: FSMContext):
-    log(edit_email) 
-    async with App(state) as app:
+    log(edit_email)    
+    if await reload_handler(msg, state):
+        return
+    async with App(state) as app:  
         if msg.text == text.Btn.TO_MENU.value:
-            await app.user.clear_data()
-            return await get_menu(msg, state)
-        
+            await app.user.pop_from_archive()
+            return await get_menu(msg, state)      
         if not await app.user.set_password(msg):
             await msg.answer(text.password_tip)      
             return
@@ -95,14 +97,17 @@ async def edit_email(msg: types.Message, state: FSMContext):
 @router.message(ProfilePage.password)
 async def subscribe_or_finish(msg: types.Message, state: FSMContext):
     log(subscribe_or_finish)
+    if await reload_handler(msg, state):
+        return
     async with App(state) as app:
         if msg.text == text.Btn.TO_MENU.value:
-            await app.user.clear_data()
+            await app.user.pop_from_archive()
             return await get_menu(msg, state)
         if msg.text != text.Btn.SKIP.value:
             if not await app.user.set_email(msg):
                 return
         error = await app.user.save(temporary = False)
+        await app.user.clear_data()
         if error:
             await app.clear_history(state)
             return await msg.answer(f'{error}\n{text.error}', reply_markup = App.menu()) 
@@ -121,9 +126,14 @@ async def subscribe_or_finish(msg: types.Message, state: FSMContext):
 @router.message(ProfilePage.email)
 async def finish(msg: types.Message, state: FSMContext):  
     log(finish)  
+    if await reload_handler(msg, state):
+        return
+    
     async with App(state) as app:
         await app.clear_history(state)
     if msg.text == text.Btn.SUBSCRIBE.value:
+        from .property import start
         return await start(msg, state)
     else:
+        from .menu import get_menu
         return await get_menu(msg, state)

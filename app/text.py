@@ -4,6 +4,7 @@ from config import Config
 manager = Config().MANAGER_LINK
 
 class Btn(Enum):
+    START = '/start'
     MENU = '🔹 Меню 🔹'
     FLATS = 'Каталог квартир 🏡'
     OFFICES = 'Помещения для бизнеса 🏢'
