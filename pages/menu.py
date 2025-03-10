@@ -50,7 +50,7 @@ async def back(msg: types.Message, state: FSMContext):
         if not next_page:
             await get_menu(msg, state)
 
-# Команда меню и дургие непонятные запросы
+# Команда меню и другие непонятные запросы
 @router.message(Command('menu'))
 @router.message(F.text)
 async def get_menu(msg: types.Message, state: FSMContext):

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Self
-import regex
+import re
 
 from aiogram import Bot, types
 from aiogram.fsm.state import State
@@ -154,11 +154,16 @@ class User:
     async def set_login(self, msg: types.Message) -> bool:
         login = msg.text.strip()
         await msg.delete()
-        if len(login) > 5 and len(login) < 16:
+        if len(login) > 5 and len(login) < 16 and re.match(r'^[a-zA-Z0-9_]*$', login):
             self.login = login
             return True
         else:
             return False
+        
+    async def is_valid_login(self) -> bool:
+        if not self.login:
+            raise ValueError('У пользователя еще нет логина')
+        return await self.database.is_user_valid(self.login)
         
     # Добавление и валидация пароля
     async def set_password(self, msg: types.Message) -> bool:
@@ -174,7 +179,7 @@ class User:
     async def set_email(self, msg: types.Message) -> bool:
         email = msg.text.strip()
         await msg.delete()
-        if regex.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+        if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
             self.email = email
             await msg.answer(f' EMAIL: {email} '.center(40, '-'))
             return True
@@ -196,15 +201,15 @@ class User:
                 return text.Error.user_exists.value
     
     # Подтягивание данных пользователя
-    async def sync(self, chat_id: int) -> None:
+    async def sync(self, chat_id: int) -> bool:
         if self.is_sync:
-            return
+            return True
         if not self.id:
             self.id = chat_id
             
         tg_user = await self.database.get_user(self.id) 
         if not tg_user:
-            return
+            return False
         
         self.is_registed = True if tg_user.is_registed else False
         if not self.phone:
@@ -219,6 +224,7 @@ class User:
         [await x.sync() for x in self.subscriptions]
         [x.photos for x in self.subscriptions]
         self.is_sync = True
+        return True
 
     # Отчистка данных
     async def clear_data(self) -> None:

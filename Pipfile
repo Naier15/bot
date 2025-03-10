@@ -17,7 +17,6 @@ pytz = "*"
 requests = "*"
 django-el-pagination = "*"
 django-yaturbo = "*"
-regex = "*"
 fuzzywuzzy = {extras = ["speedup"], version = "*"}
 psycopg2-binary = "*"
 

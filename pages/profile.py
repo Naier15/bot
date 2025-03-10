@@ -52,8 +52,11 @@ async def edit_password(msg: types.Message, state: FSMContext):
         
         res = await app.user.set_login(msg)
         if not res:
-            await msg.answer(text.login_tip)
-            return
+            return await msg.answer(text.login_tip)
+            
+        is_valid = await app.user.is_valid_login()
+        if not is_valid:
+            return await msg.answer(text.login_in_db) 
 
         await msg.answer(f' ЛОГИН: {app.user.login} '.center(40, '-'))
         await msg.answer(

@@ -122,8 +122,7 @@ class Database:
         users = DjUser.objects.filter(username = username).all()
         if len(users) > 0:
             return False
-        elif len(users) == 0:
-            return True
+        return True
         
     # Создание постоянного пользователя
     async def create_user(self, chat_id: str, login: str, password: str, email: Optional[str]) -> None:
