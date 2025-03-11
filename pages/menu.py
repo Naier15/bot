@@ -66,7 +66,6 @@ async def get_menu(msg: types.Message, state: FSMContext):
 async def reload_handler(msg: types.Message, state: FSMContext) -> bool:
     async with App(state) as app:
         if msg.text == text.Btn.START.value:
-            from .menu import start
             await app.clear_history(state, with_user = True)
             await start(msg, state)
             return True

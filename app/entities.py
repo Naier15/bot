@@ -100,7 +100,7 @@ class Subscription:
         photos_to_show = [photo for photo in self.photos if photo[0] in unseen_photos]        
         photos_to_show = [
             types.InputMediaPhoto(
-                media = f'{Config().DJANGO_HOST}media/{url}',
+                media = f'{Config().DJANGO_HOST}{url}',
                 caption = month
             ) 
             for id, url, month in photos_to_show 

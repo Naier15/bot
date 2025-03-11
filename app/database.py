@@ -55,10 +55,7 @@ class Database:
         
         last_month = BuildMonths.objects.filter(fk_building = building).order_by('-build_date').first()
         last_photos = [BuildingPhotos.objects.filter(fk_month = last_month).last()]
-        photos = []
-        for photo in last_photos:
-            path = photo.build_img.name.replace('jpeg', 'webp').replace('jpg', 'webp')
-            photos.append((photo.id, path, last_month.build_month))
+        photos = [(photo.id, photo.build_img.url, last_month.build_month) for photo in last_photos]
 
         stage = building.build_stage
         if stage == 'b':
