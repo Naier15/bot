@@ -65,9 +65,10 @@ class Database:
         elif stage == 'd':
             stage = 'Долгострой'
         
-        building = {
+        return {
             'id': building_id,
             'property_name': property_name,
+            'house_number': building.num_dom,
             'url': f'{Config().DJANGO_HOST}property/{city}/{property_id}/{slug}/',
             'photo_url': f'{Config().DJANGO_HOST}property/{city}/{property_id}/format/#building_photo',
             'photos': photos,
@@ -75,7 +76,6 @@ class Database:
             'date_realise': pass_keys.changed_date if pass_keys else 'Не указано',
             'date_info': pass_keys.note if pass_keys else 'Не указано'
         }
-        return building
     
     # Отметить, что фото было уже просмотрено в ежедневной рассылке
     async def make_photo_seen(self, chat_id: str, building_id: int, photo_id: int) -> None:

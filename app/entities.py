@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Self
-import re
+import re, datetime, logging
 
 from aiogram import Bot, types
 from aiogram.fsm.state import State
@@ -31,6 +31,7 @@ class Subscription:
         self.photo_url: Optional[str] = None
         self.send_keys: str = 'Неизвестно'
         self.property_name: Optional[str] = None
+        self.house_num: Optional[str] = None
         self.photos: list[tuple[int, str, str]] = []
         self.stage: Optional[str] = None
         self.date_realise: Optional[str] = None
@@ -73,6 +74,7 @@ class Subscription:
         self.url = data['url']
         self.photo_url = data['photo_url']
         self.property_name = data['property_name']
+        self.house_num = data['house_number']
         self.photos = data['photos']
         self.stage = data['stage']
         self.date_realise = data['date_realise']
@@ -82,14 +84,6 @@ class Subscription:
     # Формирование и отправка сообщения ежедневной подписки
     async def send_info(self, chat_id: int, is_dispatch: bool = False) -> None:
         await self.sync()
-        answer = (
-            f'{self.property_name}'
-            f'\n<a href="{self.url}">Сайт ЖК</a>'
-            f'\nСтадия строительства: {self.stage}'
-            f'\nСдача дома: {self.date_realise}'
-            f'\nПеренос сроков: {self.date_info}'
-            f'\nВсе фото и видео по <b><a href="{self.photo_url}">ссылке</a></b>'
-        )
 
         photo_ids = [id for id, _, _ in self.photos]
         if is_dispatch:
@@ -97,6 +91,7 @@ class Subscription:
             [await self.database.make_photo_seen(chat_id, self.building_id, photo_id) for photo_id in photo_ids]
         else:
             unseen_photos = photo_ids
+
         photos_to_show = [photo for photo in self.photos if photo[0] in unseen_photos]        
         photos_to_show = [
             types.InputMediaPhoto(
@@ -108,6 +103,15 @@ class Subscription:
         ]
 
         if len(photos_to_show) > 0:
+            answer = (
+                f'{self.property_name} {self.house_num}'
+                f'\n<a href="{self.url}">Сайт ЖК</a>'
+                f'\nСтадия строительства: {self.stage}'
+                f'\nСдача дома: {self.date_realise}'
+                f'\nПеренос сроков: {self.date_info}'
+                f'\nВсе фото и видео по <b><a href="{self.photo_url}">ссылке</a></b>'
+            )
+                    
             await App.bot.send_message(
                 chat_id, 
                 answer, 
@@ -234,14 +238,17 @@ class User:
         self.is_sync = True
         return True
     
+    # Сохранение данных пользователя перед редактированием профиля
     async def push_to_archive(self) -> None:
         self.archive = [self.login, self.password, self.email]
 
+    # Если в архиве есть данные пользователя и редактирование прервалось, возвращаем данные из архива
     async def pop_from_archive(self) -> None:
         if len(self.archive) > 0:
             self.login = self.archive[0]
             self.password = self.archive[1]
             self.email = self.archive[2]
+            self.archive.clear()
 
     # Отчистка данных
     async def clear_data(self) -> None:
@@ -346,7 +353,7 @@ class App:
     
     # Рассылка клиентам
     async def dispatch_to_clients(self) -> None:
-        print('DISPATCHING')
+        logging.info(f'{datetime.datetime.now()} DISPATCHING')
         chats = await self.database.clients_dispatch()
         for chat_id in chats:
             user = User(database = self.database)
