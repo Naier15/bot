@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from .database import Database
-from .utils import Markup
+from .utils import Markup, log
 from . import text
 from config import Config
 
@@ -346,6 +346,7 @@ class App:
     
     # Рассылка клиентам
     async def dispatch_to_clients(self) -> None:
+        print('DISPATCHING')
         chats = await self.database.clients_dispatch()
         for chat_id in chats:
             user = User(database = self.database)
