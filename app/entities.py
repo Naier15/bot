@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from .database import Database
-from .utils import Markup, log
+from .utils import Markup
 from . import text
 from config import Config
 
