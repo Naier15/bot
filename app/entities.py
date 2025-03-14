@@ -104,7 +104,7 @@ class Subscription:
 
         if len(photos_to_show) > 0:
             answer = (
-                f'{self.property_name} {self.house_num}'
+                f'{self.property_name}, дом {self.house_num}'
                 f'\n<a href="{self.url}">Сайт ЖК</a>'
                 f'\nСтадия строительства: {self.stage}'
                 f'\nСдача дома: {self.date_realise}'
