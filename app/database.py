@@ -20,7 +20,7 @@ class Database:
             cities.append({
                 'id': str(x.id),
                 'name': x.city_name,
-                'url': f'{Config().DJANGO_HOST}property/{x.city_slug}/'
+                'url': f'{Config().DJANGO_HOST}/property/{x.city_slug}/'
             })
         return cities
 
@@ -70,7 +70,7 @@ class Database:
             'property_name': property_name,
             'house_number': building.num_dom,
             'url': f'{Config().DJANGO_HOST}/property/{city}/{property_id}/{slug}/',
-            'photo_url': f'{Config().DJANGO_HOST}/property/{city}/{property_id}/format/#building_photo',
+            'photo_url': f'{Config().DJANGO_HOST}/property/{city}/{property_id}/{slug}/#building_photo',
             'photos': photos,
             'stage': stage,
             'date_realise': pass_keys.changed_date if pass_keys else 'Не указано',
