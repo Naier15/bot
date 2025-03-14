@@ -47,7 +47,7 @@ async def list(msg: types.Message, state: FSMContext):
     log(list) 
     async with App(state) as app:
         subscription_btns = [
-            [types.InlineKeyboardButton(text = sub.property_name, callback_data = sub.building_id)]
+            [types.InlineKeyboardButton(text = f'{sub.property_name}, дом {sub.house_num}', callback_data = sub.building_id)]
             for sub in app.user.subscriptions
         ]
         if len(subscription_btns) == 0:
