@@ -92,15 +92,7 @@ class Subscription:
         else:
             unseen_photos = photo_ids
 
-        photos_to_show = [photo for photo in self.photos if photo[0] in unseen_photos]        
-        photos_to_show = [
-            types.InputMediaPhoto(
-                media = f'{Config().DJANGO_HOST}{url}',
-                caption = month
-            ) 
-            for id, url, month in photos_to_show 
-            if id in unseen_photos
-        ]
+        photos_to_show = [photo for photo in self.photos if photo[0] in unseen_photos]   
 
         if len(photos_to_show) > 0:
             answer = (
@@ -111,6 +103,8 @@ class Subscription:
                 f'\nПеренос сроков: {self.date_info}'
                 f'\nВсе фото и видео по <b><a href="{self.photo_url}">ссылке</a></b>'
             )
+            if Config().DEBUG:
+                answer += f'\nСсылка на фото: {[photo[1] for photo in photos_to_show]}'
                     
             await App.bot.send_message(
                 chat_id, 
@@ -118,6 +112,13 @@ class Subscription:
                 reply_markup = App.menu() if is_dispatch else Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
             )
             try:
+                photos_to_show = [
+                    types.InputMediaPhoto(
+                        media = url,
+                        caption = month
+                    ) 
+                    for _, url, month in photos_to_show
+                ]
                 await App.bot.send_media_group(chat_id, photos_to_show)
             except:
                 pass

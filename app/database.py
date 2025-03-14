@@ -55,7 +55,7 @@ class Database:
         
         last_month = BuildMonths.objects.filter(fk_building = building).order_by('-build_date').first()
         last_photos = [BuildingPhotos.objects.filter(fk_month = last_month).last()]
-        photos = [(photo.id, photo.build_img.url, last_month.build_month) for photo in last_photos]
+        photos = [(photo.id, f'{Config().DJANGO_HOST}{photo.build_img.url}', last_month.build_month) for photo in last_photos]
 
         stage = building.build_stage
         if stage == 'b':
