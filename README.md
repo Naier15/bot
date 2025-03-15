@@ -4,10 +4,10 @@
 ## Quick start
 #### Настройки:
 - в settings.py добавить `os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"`
-- в settings.py в список INSTALLED_APPS добавить `bot`
+- в settings.py в список INSTALLED_APPS добавить `telegrambot`
 - в django проекте запустить `git clone https://github.com/Naier15/bot`
 - `python manage.py migrate` - установить миграцию из bot приложения
-- `cd bot` - пройти в директорию бота и добавить файл `.env`
+- `cd telegrambot` - пройти в директорию бота и добавить файл `.env`
 - в файле `.env` нужно указать следующие переменные:<br/>
 
 | Название переменной | (Не)обязательная | Определение |
@@ -24,7 +24,7 @@
 <br/><br/>
 
 #### Запуск бота:
-- `cd bot` - перейти в папку с ботом
+- `cd telegrambot` - перейти в папку с ботом
 - `pip install -U pip` - обновить pip
 - `pip install pipenv` - скачать проектный менеджер pipenv
 - `pipenv shell` - активировать виртуальную среду

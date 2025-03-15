@@ -9,7 +9,7 @@ from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile
 from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildMonths, BuildingPhotos
-from bot.models import TgUser, SeenPhoto
+from telegrambot.models import TgUser, SeenPhoto
 
 
 # Все запросы к базе данных
