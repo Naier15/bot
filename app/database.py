@@ -1,5 +1,5 @@
 from typing import Optional
-import secrets, string
+import secrets, string, logging
 
 from config import Config
 from .utils import connect_django
@@ -161,4 +161,7 @@ class Database:
         
     # Ежедневная рассылка пользователям новостей
     async def clients_dispatch(self) -> list[int]:
-        return await sync_to_async(TgUser.objects.values_list)('chat_id', flat = True)
+        try:
+            return await sync_to_async(TgUser.objects.values_list)('chat_id', flat = True)
+        except Exception as ex:
+            logging.info(ex)
