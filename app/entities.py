@@ -369,9 +369,9 @@ class App:
         logging.info(f'{datetime.datetime.now()} DISPATCHING')
         chats = await self.database.clients_dispatch()
         logging.info('chats: ', chats)
-        for chat_id in chats:
-            user = User(database = self.database)
-            await user.sync(chat_id)
+        # for chat_id in chats:
+        #     user = User(database = self.database)
+        #     await user.sync(chat_id)
 
-            for subscription in user.subscriptions:
-                await subscription.send_info(user.id, is_dispatch = True)
+        #     for subscription in user.subscriptions:
+        #         await subscription.send_info(user.id, is_dispatch = True)
