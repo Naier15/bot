@@ -24,7 +24,7 @@ async def main():
     app = App()
     await app.bot.delete_webhook(drop_pending_updates = True)  
     commands = [ types.BotCommand(command = 'menu', description = 'В меню') ]
-    await app.bot.set_my_commands(commands, types.BotCommandScopeDefault())
+    # await app.bot.set_my_commands(commands, types.BotCommandScopeDefault())
     await app.dispatch_to_clients()
     # scheduler = AsyncIOScheduler(timezone = Config().REGION)
     # if Config().DEBUG:
