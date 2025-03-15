@@ -56,7 +56,7 @@ class Database:
         
         last_month = BuildMonths.objects.filter(fk_building = building).order_by('-build_date').first()
         last_photos = [BuildingPhotos.objects.filter(fk_month = last_month).last()]
-        photos = [(photo.id, 'https://bashni.pro/media/property/%D1%81%D1%82%D1%80%D0%BE%D0%B8%D1%82%D1%81%D1%8F/52634/building/%D0%94%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8C%2C%202024/%D0%94%D0%BE%D0%BC_1%D0%90_%D0%B2%D0%B8%D0%B4_1_new.webp', last_month.build_month) for photo in last_photos]
+        photos = [(photo.id, f'{Config().DJANGO_HOST}{photo.build_img.url}', last_month.build_month) for photo in last_photos]
 # 'https://bashni.pro/media/property/%D1%81%D1%82%D1%80%D0%BE%D0%B8%D1%82%D1%81%D1%8F/52634/building/%D0%94%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8C%2C%202024/%D0%94%D0%BE%D0%BC_1%D0%90_%D0%B2%D0%B8%D0%B4_1_new.webp'
 # f'{Config().DJANGO_HOST}{photo.build_img.url}'
         stage = building.build_stage

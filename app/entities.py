@@ -126,13 +126,12 @@ class Subscription:
                 try:
                     for id, url, month in photos_to_show:
                         ext = url.split('.')[-1]
-                        tempfile = await get_temp_file(f'{id}.{ext}', url)
-                        photo = types.InputMediaPhoto(
-                            media = types.FSInputFile(tempfile),
-                            caption = month
-                        )
-                        await App.bot.send_media_group(chat_id, [photo])
-                        await aiofiles.os.remove(tempfile)
+                        async with Tempfile(f'{id}.{ext}', url) as tempfile:
+                            photo = types.InputMediaPhoto(
+                                media = types.FSInputFile(tempfile),
+                                caption = month
+                            )
+                            await App.bot.send_media_group(chat_id, [photo])
                 except Exception as ex:
                     logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
 
