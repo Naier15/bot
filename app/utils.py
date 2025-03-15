@@ -118,15 +118,18 @@ class Tempfile:
         self.url = url
 
     async def __aenter__(self) -> str:
+        bytes = None
         if not os.path.exists(self._temp_path):
             os.mkdir(self._temp_path)
         self._temp_file = os.path.join(self._temp_path, self._temp_name)
         async with aiohttp.ClientSession() as session:
             async with session.get(self.url) as response:
                 bytes = await response.content.read()
-                img = Image.open(BytesIO(bytes))
-                img = img.resize((img.size[0] // 3,img.size[1] // 3))
-                img.save(self._temp_file, optimize = True, quality = 70)
+        if not bytes:
+            return self._temp_file
+        img = Image.open(BytesIO(bytes))
+        img = img.resize((img.size[0] // 3,img.size[1] // 3))
+        img.save(self._temp_file, optimize = True, quality = 70)
         return self._temp_file
     
     async def __aexit__(self, type, value, traceback) -> None:
