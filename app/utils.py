@@ -117,9 +117,10 @@ async def get_temp_file(temp_name: str, url: str) -> str:
     if not os.path.exists(temp_path):
         os.mkdir(temp_path)
     temp_file = os.path.join(temp_path, temp_name)
+    
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            bytes = await response.content.read()
+        response = await session.get(url)
+        bytes = await response.content.read()
     if not bytes:
         return temp_file
     img = Image.open(BytesIO(bytes))
