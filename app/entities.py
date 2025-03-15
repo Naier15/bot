@@ -369,6 +369,7 @@ class App:
         logging.info(f'{datetime.datetime.now()} DISPATCHING')
         chats = await self.database.clients_dispatch()
         for chat_id in chats:
+            print(chat_id)
             user = User(database = self.database)
             await user.sync(chat_id)
 
