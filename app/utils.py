@@ -127,7 +127,7 @@ class Tempfile:
                 img = Image.open(BytesIO(bytes))
                 img = img.resize((img.size[0] // 3,img.size[1] // 3))
                 img.save(self._temp_file, optimize = True, quality = 70)
-                return self._temp_file 
+        return self._temp_file
     
     async def __aexit__(self, type, value, traceback) -> None:
         os.remove(self._temp_file)
