@@ -25,26 +25,26 @@ async def main():
     await app.bot.delete_webhook(drop_pending_updates = True)  
     commands = [ types.BotCommand(command = 'menu', description = 'В меню') ]
     await app.bot.set_my_commands(commands, types.BotCommandScopeDefault())
-	
-    scheduler = AsyncIOScheduler(timezone = Config().REGION)
-    if Config().DEBUG:
-        scheduler.add_job(
-            app.dispatch_to_clients, 
-            trigger = 'cron', 
-            day_of_week = '0,1,2,3,4,5,6',
-            minute = '*',
-            start_date = datetime.datetime.now()
-        )
-    else:
-        scheduler.add_job(
-            app.dispatch_to_clients, 
-            trigger = 'cron', 
-            day_of_week = '0,1,2,3,4,5,6',
-            hour = int(Config().DISPATCH_TIME.split(':')[0]), 
-            minute = int(Config().DISPATCH_TIME.split(':')[1]),
-            start_date = datetime.datetime.now()
-        )
-    scheduler.start()
+    await app.dispatch_to_clients()
+    # scheduler = AsyncIOScheduler(timezone = Config().REGION)
+    # if Config().DEBUG:
+    #     scheduler.add_job(
+    #         app.dispatch_to_clients, 
+    #         trigger = 'cron', 
+    #         day_of_week = '0,1,2,3,4,5,6',
+    #         minute = '*',
+    #         start_date = datetime.datetime.now()
+    #     )
+    # else:
+    #     scheduler.add_job(
+    #         app.dispatch_to_clients, 
+    #         trigger = 'cron', 
+    #         day_of_week = '0,1,2,3,4,5,6',
+    #         hour = int(Config().DISPATCH_TIME.split(':')[0]), 
+    #         minute = int(Config().DISPATCH_TIME.split(':')[1]),
+    #         start_date = datetime.datetime.now()
+    #     )
+    # scheduler.start()
     
     dp = Dispatcher(storage = MemoryStorage())
     [dp.include_router(router) for router in (
