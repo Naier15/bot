@@ -2,7 +2,7 @@ from aiogram import types
 from PIL import Image
 from io import BytesIO
 from typing import Callable, Optional, Self
-import logging, inspect, math, os, sys, django, aiohttp
+import logging, inspect, math, os, sys, django, aiohttp, aiofiles
 import django.conf
 
 
@@ -111,11 +111,27 @@ def log(func: Callable, info: Optional[str] = None):
         message += f' - {info}'
     logger.info(message)
 
+async def get_temp_file(temp_name: str, url: str) -> str:
+    temp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
+    bytes = None
+    if not os.path.exists(temp_path):
+        os.mkdir(temp_path)
+    temp_file = os.path.join(temp_path, temp_name)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            bytes = await response.content.read()
+    if not bytes:
+        return temp_file
+    img = Image.open(BytesIO(bytes))
+    img = img.resize((img.size[0] // 3,img.size[1] // 3))
+    img.save(temp_file, optimize = True, quality = 70)
+    return temp_file
+
 class Tempfile:
-    def __init__(self, temp_path: str, temp_name: str, url: str) -> Self:
-        self._temp_path = temp_path
-        self._temp_name = temp_name.split('/')[-1]
-        self.url = url
+    def __init__(self, temp_name: str, url: str) -> Self:
+        self._temp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
+        self._temp_name = temp_name
+        self._url = url
 
     async def __aenter__(self) -> str:
         bytes = None
@@ -123,7 +139,7 @@ class Tempfile:
             os.mkdir(self._temp_path)
         self._temp_file = os.path.join(self._temp_path, self._temp_name)
         async with aiohttp.ClientSession() as session:
-            async with session.get(self.url) as response:
+            async with session.get(self._url) as response:
                 bytes = await response.content.read()
         if not bytes:
             return self._temp_file
@@ -133,4 +149,4 @@ class Tempfile:
         return self._temp_file
     
     async def __aexit__(self, type, value, traceback) -> None:
-        os.remove(self._temp_file)
+        await aiofiles.os.remove(self._temp_file)

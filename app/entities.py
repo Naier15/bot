@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional, Self
-import re, datetime, logging, os
+import re, datetime, logging, os, aiofiles
 
+import aiofiles.os
 from aiogram import Bot, types
 from aiogram.fsm.state import State
 from aiogram.fsm.context import FSMContext
@@ -10,7 +11,7 @@ from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
 
 from .database import Database
-from .utils import Markup, Tempfile
+from .utils import Markup, Tempfile, get_temp_file
 from . import text
 from config import Config
 
@@ -124,14 +125,14 @@ class Subscription:
                 exception = ex
                 try:
                     for id, url, month in photos_to_show:
-                        directory = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
-
-                        async with Tempfile(directory, f'{id}.webp', url) as tempfile:
-                            photo = types.InputMediaPhoto(
-                                media = types.FSInputFile(tempfile),
-                                caption = month
-                            )
-                            await App.bot.send_media_group(chat_id, [photo])
+                        ext = url.split('.')[-1]
+                        tempfile = await get_temp_file(f'{id}.{ext}', url)
+                        photo = types.InputMediaPhoto(
+                            media = types.FSInputFile(tempfile),
+                            caption = month
+                        )
+                        await App.bot.send_media_group(chat_id, [photo])
+                        await aiofiles.os.remove(tempfile)
                 except Exception as ex:
                     logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
 
