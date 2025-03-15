@@ -49,7 +49,7 @@ async def navigation(call: types.CallbackQuery, state: FSMContext):
         elif prev_state == PropertyPage.city:
             await start(call.message, state)
         elif prev_state == PropertyPage.property:
-            await property(call, state)
+            await city(call, state)
         else:
             await menu(call.message, state)
     elif call.data == 'next':

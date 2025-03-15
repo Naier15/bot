@@ -1,15 +1,16 @@
 from dataclasses import dataclass
 from typing import Optional, Self
-import re, datetime, logging
+import re, datetime, logging, os
 
 from aiogram import Bot, types
 from aiogram.fsm.state import State
 from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from asgiref.sync import sync_to_async
 
 from .database import Database
-from .utils import Markup
+from .utils import Markup, Tempfile
 from . import text
 from config import Config
 
@@ -111,17 +112,28 @@ class Subscription:
                 answer, 
                 reply_markup = App.menu() if is_dispatch else Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
             )
+            exception = None
             try:
-                photos_to_show = [
-                    types.InputMediaPhoto(
+                for id, url, month in photos_to_show:
+                    photo = types.InputMediaPhoto(
                         media = url,
                         caption = month
-                    ) 
-                    for _, url, month in photos_to_show
-                ]
-                await App.bot.send_media_group(chat_id, photos_to_show)
-            except:
-                pass
+                    )
+                    await App.bot.send_media_group(chat_id, [photo])
+            except Exception as ex:
+                exception = ex
+                try:
+                    for id, url, month in photos_to_show:
+                        directory = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
+
+                        async with Tempfile(directory, f'{id}.webp', url) as tempfile:
+                            photo = types.InputMediaPhoto(
+                                media = types.FSInputFile(tempfile),
+                                caption = month
+                            )
+                            await App.bot.send_media_group(chat_id, [photo])
+                except Exception as ex:
+                    logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
 
 # Пользователь
 class User:
@@ -232,7 +244,7 @@ class User:
         self.email = tg_user.user_profile.user.email if tg_user.user_profile.user.email else None
         self.subscriptions = [
             Subscription(database = self.database, building_id = str(building.id)) 
-            for building in tg_user.building.all()
+            for building in await sync_to_async(tg_user.building.all)()
         ]
         [await x.sync() for x in self.subscriptions]
         [x.photos for x in self.subscriptions]

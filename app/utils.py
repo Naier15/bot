@@ -1,6 +1,8 @@
 from aiogram import types
+from PIL import Image
+from io import BytesIO
 from typing import Callable, Optional, Self
-import logging, inspect, math, os, sys, django
+import logging, inspect, math, os, sys, django, aiohttp
 import django.conf
 
 
@@ -108,3 +110,24 @@ def log(func: Callable, info: Optional[str] = None):
     if info:
         message += f' - {info}'
     logger.info(message)
+
+class Tempfile:
+    def __init__(self, temp_path: str, temp_name: str, url: str) -> Self:
+        self._temp_path = temp_path
+        self._temp_name = temp_name.split('/')[-1]
+        self.url = url
+
+    async def __aenter__(self) -> str:
+        if not os.path.exists(self._temp_path):
+            os.mkdir(self._temp_path)
+        self._temp_file = os.path.join(self._temp_path, self._temp_name)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.url) as response:
+                bytes = await response.content.read()
+                img = Image.open(BytesIO(bytes))
+                img = img.resize((img.size[0] // 3,img.size[1] // 3))
+                img.save(self._temp_file, optimize = True, quality = 70)
+                return self._temp_file 
+    
+    async def __aexit__(self, type, value, traceback) -> None:
+        os.remove(self._temp_file)

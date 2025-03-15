@@ -5,6 +5,7 @@ from config import Config
 from .utils import connect_django
 connect_django(Config().DJANGO_PATH)
 
+from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile
 from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildMonths, BuildingPhotos
@@ -106,7 +107,7 @@ class Database:
     async def create_temp_user(self, chat_id: str, phone_number: str) -> None:
         alphabet = string.ascii_letters + string.digits
         temp_login = 'temp_' + ''.join(secrets.choice(alphabet) for _ in range(16))
-        user = DjUser.objects.create_user(
+        user = await sync_to_async(DjUser.objects.create_user)(
             username = temp_login,
             password = temp_login
         )
@@ -115,7 +116,7 @@ class Database:
 
     # Проверка, что сможем добавить нового пользователя
     async def is_user_valid(self, username: str) -> bool:
-        users = DjUser.objects.filter(username = username).all()
+        users = await sync_to_async(DjUser.objects.filter(username = username).all)()
         if len(users) > 0:
             return False
         return True
@@ -160,7 +161,4 @@ class Database:
         
     # Ежедневная рассылка пользователям новостей
     async def clients_dispatch(self) -> list[int]:
-        users = []
-        async for user in TgUser.objects.all():
-            users.append(user.chat_id)
-        return users
+        return await sync_to_async(TgUser.objects.values_list)('chat_id', flat = True)
