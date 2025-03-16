@@ -1,3 +1,4 @@
+import aiofiles.os
 from aiogram import types
 from PIL import Image
 from io import BytesIO

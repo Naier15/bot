@@ -18,3 +18,4 @@ __pycache__/
 *.png
 add.txt
 migrations/
+app/temp/

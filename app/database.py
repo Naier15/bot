@@ -6,6 +6,7 @@ config = Config()
 from .utils import connect_django
 connect_django(config.DJANGO_PATH)
 
+from django.db.models import Q
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile
@@ -54,9 +55,7 @@ class Database:
         slug = building.fk_property.slug
         city = building.fk_property.city.city_slug
         pass_keys = CheckTermsPassKeys.objects.filter(fk_object = building).first()
-        
-        last_month = BuildMonths.objects.filter(fk_building = building).order_by('-build_date').first()
-        last_photos = [BuildingPhotos.objects.filter(fk_month = last_month).last()]
+        last_photos = [BuildingPhotos.objects.filter(Q(fk_month__fk_building = building) & Q(build_img__isnull = False)).order_by('-fk_month__build_date').first()]
         
         photos = []
         for photo in last_photos:
@@ -65,9 +64,9 @@ class Database:
                     raise Exception('build_img не найден')
                 if not photo.build_img.url:
                     raise Exception('url не найден')
-                photos.append((photo.id, f'{config.DJANGO_HOST}{photo.build_img.url}', last_month.build_month))
+                photos.append((photo.id, f'{config.DJANGO_HOST}{photo.build_img.url}', photo.fk_month.build_month))
             except Exception as ex:
-                photos.append((photo.id, f'{ex}', last_month.build_month))
+                photos.append((photo.id, f'{ex}', photo.fk_month.build_month))
 # 'https://bashni.pro/media/property/%D1%81%D1%82%D1%80%D0%BE%D0%B8%D1%82%D1%81%D1%8F/52634/building/%D0%94%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8C%2C%202024/%D0%94%D0%BE%D0%BC_1%D0%90_%D0%B2%D0%B8%D0%B4_1_new.webp'
 # f'{config.DJANGO_HOST}{photo.build_img.url}'
         stage = building.build_stage
