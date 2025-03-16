@@ -369,6 +369,7 @@ class App:
     async def dispatch_to_clients(self) -> None:
         logging.info(f'{datetime.datetime.now()} DISPATCHING')
         chats = await self.database.clients_dispatch()
+        print(chats)
         for chat_id in chats:
             if chat_id != 341461613:
                 continue
