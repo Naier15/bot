@@ -40,8 +40,13 @@ class Subscription:
         self.date_realise: Optional[str] = None
         self.date_info: Optional[str] = None
 
-    def __str__(self) -> str:
-        return f'Subscription(city = {self.city_id}, property = {self.property_id}, building = {self.building_id})'
+    def __eq__(self, other: 'Subscription') -> bool:
+        if not isinstance(other, Subscription):
+            raise TypeError('Вы сравниваете не с подпиской')
+        return self.building_id == other.building_id
+
+    def __repr__(self) -> str:
+        return f'\nSubscription(\n\tname = {self.property_name}, \n\thouse_number = {self.house_num}\n\tcity = {self.city_id}, \n\tproperty = {self.property_id}, \n\tbuilding = {self.building_id}\n)\n'
         
     # Добавление информации
     async def set(self, 
