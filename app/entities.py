@@ -236,6 +236,8 @@ class User:
         if not tg_user:
             return False
         
+        
+        
         self.is_registed = True if tg_user.is_registed else False
         if not self.phone:
             self.phone = tg_user.user_profile.tel
