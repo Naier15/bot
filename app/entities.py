@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Self
-import re, datetime, logging, os, aiofiles
+import re, datetime, logging
 
-import aiofiles.os
 from aiogram import Bot, types
 from aiogram.fsm.state import State
 from aiogram.fsm.context import FSMContext
@@ -11,10 +10,12 @@ from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
 
 from .database import Database
-from .utils import Markup, Tempfile, get_temp_file
+from .utils import Markup, Tempfile
 from . import text
 from config import Config
 
+
+config = Config()
 
 # Подписка
 @dataclass
@@ -105,7 +106,7 @@ class Subscription:
                 f'\nПеренос сроков: {self.date_info}'
                 f'\nВсе фото и видео по <b><a href="{self.photo_url}">ссылке</a></b>'
             )
-            if Config().DEBUG:
+            if config.DEBUG:
                 answer += f'\nСсылка на фото: {[photo[1] for photo in photos_to_show]}'
                     
             await App.bot.send_message(
@@ -274,13 +275,13 @@ class App:
     def __init__(self, state: Optional[FSMContext] = None) -> Self:
         if not App.bot:
             App.bot: Bot = Bot(
-                token = Config().BOT_TOKEN, 
+                token = config.BOT_TOKEN, 
                 default = DefaultBotProperties(parse_mode = ParseMode.HTML)
             )
         self.history: list[State] = []
         self.database: Database = Database()
         self.user: User = User(self.database)
-        self.subscription: Optional[Subscription]
+        self.subscription: Optional[Subscription] = None
         self.instance: Optional[Self] = None
         self.state = state
 

@@ -111,23 +111,6 @@ def log(func: Callable, info: Optional[str] = None):
         message += f' - {info}'
     logger.info(message)
 
-async def get_temp_file(temp_name: str, url: str) -> str:
-    temp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))
-    bytes = None
-    if not os.path.exists(temp_path):
-        os.mkdir(temp_path)
-    temp_file = os.path.join(temp_path, temp_name)
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            bytes = await response.read()
-    if not bytes:
-        return temp_file
-    img = Image.open(BytesIO(bytes))
-    img = img.resize((img.size[0] // 3,img.size[1] // 3))
-    img.save(temp_file, optimize = True, quality = 70)
-    return temp_file
-
 class Tempfile:
     def __init__(self, temp_name: str, url: str) -> Self:
         self._temp_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'temp'))

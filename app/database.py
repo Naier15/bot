@@ -1,9 +1,10 @@
 from typing import Optional
-import secrets, string, logging
+import secrets, string
 
 from config import Config
+config = Config()
 from .utils import connect_django
-connect_django(Config().DJANGO_PATH)
+connect_django(config.DJANGO_PATH)
 
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User as DjUser
@@ -21,7 +22,7 @@ class Database:
             cities.append({
                 'id': str(x.id),
                 'name': x.city_name,
-                'url': f'{Config().DJANGO_HOST}/property/{x.city_slug}/'
+                'url': f'{config.DJANGO_HOST}/property/{x.city_slug}/'
             })
         return cities
 
@@ -64,11 +65,11 @@ class Database:
                     raise Exception('build_img не найден')
                 if not photo.build_img.url:
                     raise Exception('url не найден')
-                photos.append((photo.id, f'{Config().DJANGO_HOST}{photo.build_img.url}', last_month.build_month))
+                photos.append((photo.id, f'{config.DJANGO_HOST}{photo.build_img.url}', last_month.build_month))
             except Exception as ex:
                 photos.append((photo.id, f'{ex}', last_month.build_month))
 # 'https://bashni.pro/media/property/%D1%81%D1%82%D1%80%D0%BE%D0%B8%D1%82%D1%81%D1%8F/52634/building/%D0%94%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8C%2C%202024/%D0%94%D0%BE%D0%BC_1%D0%90_%D0%B2%D0%B8%D0%B4_1_new.webp'
-# f'{Config().DJANGO_HOST}{photo.build_img.url}'
+# f'{config.DJANGO_HOST}{photo.build_img.url}'
         stage = building.build_stage
         if stage == 'b':
             stage = 'Строится'
@@ -81,8 +82,8 @@ class Database:
             'id': building_id,
             'property_name': property_name,
             'house_number': building.num_dom,
-            'url': f'{Config().DJANGO_HOST}/property/{city}/{property_id}/{slug}/',
-            'photo_url': f'{Config().DJANGO_HOST}/property/{city}/{property_id}/{slug}/#building_photo',
+            'url': f'{config.DJANGO_HOST}/property/{city}/{property_id}/{slug}/',
+            'photo_url': f'{config.DJANGO_HOST}/property/{city}/{property_id}/{slug}/#building_photo',
             'photos': photos,
             'stage': stage,
             'date_realise': pass_keys.changed_date if pass_keys else 'Не указано',
@@ -172,7 +173,4 @@ class Database:
         
     # Ежедневная рассылка пользователям новостей
     async def clients_dispatch(self) -> list[int]:
-        try:
-            return await sync_to_async(TgUser.objects.values_list)('chat_id', flat = True)
-        except Exception as ex:
-            logging.info(ex)
+        return await sync_to_async(TgUser.objects.values_list)('chat_id', flat = True)

@@ -1,7 +1,8 @@
 from enum import Enum
 from config import Config
 
-manager = Config().MANAGER_LINK
+config = Config()
+manager = config.MANAGER_LINK
 
 class Btn(Enum):
     START = '/start'
@@ -77,7 +78,7 @@ offices = (
     '  -	Все услуги оказываются бесплатно\n'
     'Возможно онлайн встреча и сделка\n\n'
     'Перейти в каталог помещений:\n'
-    f'<a href="{Config().DJANGO_HOST}/property/vladivostok/commercial/">Владивосток</a>'
+    f'<a href="{config.DJANGO_HOST}/property/vladivostok/commercial/">Владивосток</a>'
 )
 
 login_preview = (
