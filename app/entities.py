@@ -369,7 +369,7 @@ class App:
     async def dispatch_to_clients(self) -> None:
         logging.info(f'{datetime.datetime.now()} DISPATCHING')
         chats = await self.database.clients_dispatch()
-        for chat_id in chats:
+        async for chat_id in chats:
             user = User(database = self.database)
             await user.sync(chat_id)
 
