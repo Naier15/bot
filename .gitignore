@@ -17,3 +17,4 @@ __pypackages__/
 __pycache__/
 *.png
 add.txt
+migrations/
