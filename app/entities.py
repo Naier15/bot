@@ -273,6 +273,13 @@ class User:
     async def clear_data(self) -> None:
         self.password = None
 
+    # Формирование подписок как inline кнопок
+    async def form_subscriptions_as_buttons(self) -> list:
+        return [
+            [types.InlineKeyboardButton(text = f'{sub.property_name}, дом {sub.house_num}', callback_data = sub.building_id)]
+            for sub in self.subscriptions
+        ]
+
 # Логика приложения
 class App:
     bot: Bot = None

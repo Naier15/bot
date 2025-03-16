@@ -46,10 +46,7 @@ async def menu(msg: types.Message, state: FSMContext):
 async def list(msg: types.Message, state: FSMContext):
     log(list) 
     async with App(state) as app:
-        subscription_btns = [
-            [types.InlineKeyboardButton(text = f'{sub.property_name}, дом {sub.house_num}', callback_data = sub.building_id)]
-            for sub in app.user.subscriptions
-        ]
+        subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
             return await msg.answer(text.subscription_empty, reply_markup = Markup.current())
         await msg.answer(
@@ -65,10 +62,7 @@ async def list(msg: types.Message, state: FSMContext):
 async def remove(msg: types.Message, state: FSMContext):
     log(remove) 
     async with App(state) as app:
-        subscription_btns = [
-            [types.InlineKeyboardButton(text = sub.property_name, callback_data = sub.building_id)]
-            for sub in app.user.subscriptions
-        ]
+        subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
             return await msg.answer(text.subscription_empty, reply_markup = Markup.current())
         
