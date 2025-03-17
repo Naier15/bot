@@ -37,7 +37,7 @@ class Subscription:
         self.house_num: Optional[str] = None
         self.photos: list[tuple[int, str, str]] = []
         self.stage: Optional[str] = None
-        self.date_realise: Optional[str] = None
+        self.date_release: Optional[str] = None
         self.date_info: Optional[str] = None
 
     def __eq__(self, other: 'Subscription') -> bool:
@@ -85,7 +85,7 @@ class Subscription:
         self.house_num = data['house_number']
         self.photos = data['photos']
         self.stage = data['stage']
-        self.date_realise = data['date_realise']
+        self.date_release = data['date_release']
         self.date_info = data['date_info']
         return True
     
@@ -107,7 +107,7 @@ class Subscription:
                 f'{self.property_name}, дом {self.house_num}'
                 f'\n<a href="{self.url}">Сайт ЖК</a>'
                 f'\nСтадия строительства: {self.stage}'
-                f'\nСдача дома: {self.date_realise}'
+                f'\nСдача дома: {self.date_release}'
                 f'\nПеренос сроков: {self.date_info}'
                 f'\nВсе фото и видео по <b><a href="{self.photo_url}">ссылке</a></b>'
             )

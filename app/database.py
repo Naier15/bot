@@ -10,7 +10,7 @@ from django.db.models import Q
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User as DjUser
 from authapp.models import UserProfile
-from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildMonths, BuildingPhotos
+from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildingPhotos
 from telegrambot.models import TgUser, SeenPhoto
 
 
@@ -54,21 +54,18 @@ class Database:
         property_name = building.fk_property.name
         slug = building.fk_property.slug
         city = building.fk_property.city.city_slug
-        pass_keys = CheckTermsPassKeys.objects.filter(fk_object = building).first()
-        last_photos = [BuildingPhotos.objects.filter(Q(fk_month__fk_building = building) & Q(build_img__isnull = False)).order_by('-fk_month__build_date').first()]
-        
-        photos = []
-        for photo in last_photos:
-            try:
-                if not photo.build_img:
-                    raise Exception('build_img не найден')
-                if not photo.build_img.url:
-                    raise Exception('url не найден')
-                photos.append((photo.id, f'{config.DJANGO_HOST}{photo.build_img.url}', photo.fk_month.build_month))
-            except Exception as ex:
-                photos.append((photo.id, f'{ex}', photo.fk_month.build_month))
-# 'https://bashni.pro/media/property/%D1%81%D1%82%D1%80%D0%BE%D0%B8%D1%82%D1%81%D1%8F/52634/building/%D0%94%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8C%2C%202024/%D0%94%D0%BE%D0%BC_1%D0%90_%D0%B2%D0%B8%D0%B4_1_new.webp'
-# f'{config.DJANGO_HOST}{photo.build_img.url}'
+        pass_keys = await sync_to_async(CheckTermsPassKeys.objects.filter(fk_object = building).first)()
+        last_photos = [ 
+            await sync_to_async(
+                BuildingPhotos.objects.filter(Q(fk_month__fk_building = building) & Q(build_img__isnull = False))
+                    .order_by('-fk_month__build_date')
+                    .first)() 
+        ] 
+        photos = [ 
+            (photo.id, f'{config.DJANGO_HOST}{photo.build_img.url}', photo.fk_month.build_month) 
+            for photo in last_photos 
+        ]
+
         stage = building.build_stage
         if stage == 'b':
             stage = 'Строится'
@@ -76,6 +73,16 @@ class Database:
             stage = 'Сдан'
         elif stage == 'd':
             stage = 'Долгострой'
+
+        if pass_keys:
+            date_release = pass_keys.changed_date
+            date_info = pass_keys.note
+        elif building.operation_term:
+            date_release = building.operation_term
+            date_info = 'Без изменений'
+        else:
+            date_release = 'Не указано'
+            date_info = 'Не указано'
         
         return {
             'id': building_id,
@@ -85,8 +92,8 @@ class Database:
             'photo_url': f'{config.DJANGO_HOST}/property/{city}/{property_id}/{slug}/#building_photo',
             'photos': photos,
             'stage': stage,
-            'date_realise': pass_keys.changed_date if pass_keys else 'Не указано',
-            'date_info': pass_keys.note if pass_keys else 'Не указано'
+            'date_release': date_release,
+            'date_info': date_info
         }
     
     # Отметить, что фото было уже просмотрено в ежедневной рассылке
@@ -100,7 +107,7 @@ class Database:
     # Отфильтровать еще не просмотренные фото
     async def filter_unseen_photos(self, chat_id: str, building_id: str, photos: list[int]) -> list[str]:
         user = await TgUser.objects.aget(chat_id = chat_id)
-        seen_photos = user.seen_photos.filter(building__id = building_id) & user.seen_photos.filter(photo__id__in = photos)
+        seen_photos = user.seen_photos.filter(Q(building__id = building_id) & Q(photo__id__in = photos))
         for photo in seen_photos:
             while photo.photo.id in photos:
                 photos.remove(photo.photo.id)
