@@ -101,13 +101,13 @@ class Database:
         building = await Buildings.objects.aget(id = building_id)
         photo = await BuildingPhotos.objects.aget(id = photo_id)
         seen_photo = await SeenPhoto.objects.acreate(photo = photo, building = building)
-        user = await TgUser.objects.aget(chat_id = chat_id)
-        await user.seen_photos.aadd(seen_photo)
+        tg_user = await self.get_user(chat_id)
+        await tg_user.seen_photos.aadd(seen_photo)
 
     # Отфильтровать еще не просмотренные фото
     async def filter_unseen_photos(self, chat_id: str, building_id: str, photos: list[int]) -> list[str]:
-        user = await TgUser.objects.aget(chat_id = chat_id)
-        seen_photos = user.seen_photos.filter(Q(building__id = building_id) & Q(photo__id__in = photos))
+        tg_user = await self.get_user(chat_id)
+        seen_photos = tg_user.seen_photos.filter(Q(building__id = building_id) & Q(photo__id__in = photos))
         for photo in seen_photos:
             while photo.photo.id in photos:
                 photos.remove(photo.photo.id)
@@ -116,8 +116,8 @@ class Database:
     # Получить временную запись пользователя
     async def has_temp_user(self, chat_id: str) -> bool:
         try:
-            user = await TgUser.objects.aget(chat_id = chat_id)
-            return True if user else False
+            tg_user = await self.get_user(chat_id)
+            return True if tg_user else False
         except TgUser.DoesNotExist:
             return False
         
@@ -141,7 +141,7 @@ class Database:
         
     # Создание постоянного пользователя
     async def create_user(self, chat_id: str, login: str, password: str, email: Optional[str]) -> None:
-        tg_user = await TgUser.objects.aget(chat_id = chat_id)
+        tg_user = await self.get_user(chat_id)
         tg_user.user_profile.user.username = login
         tg_user.is_registed = True
         if email:
@@ -152,12 +152,14 @@ class Database:
     
     # Получение постоянного пользователя
     async def get_user(self, chat_id: str) -> Optional[TgUser]:
-        tg_user = await TgUser.objects.aget(chat_id = chat_id)
-        return tg_user
-    
+        try:
+            return await TgUser.objects.aget(chat_id = chat_id)
+        except TgUser.DoesNotExist:
+            return None
+
     # Сохранить подписку пользователя
     async def save_subscription(self, chat_id: str, building_id: str) -> None:
-        tg_user = await TgUser.objects.aget(chat_id = chat_id)
+        tg_user = await self.get_user(chat_id)
         if not tg_user:
             return
         building = await Buildings.objects.aget(id = building_id)
@@ -168,7 +170,7 @@ class Database:
 
     # Удалить подписку у пользователя
     async def remove_subscription(self, chat_id: str, building_id: str) -> None:
-        tg_user = await TgUser.objects.aget(chat_id = chat_id)
+        tg_user = await self.get_user(chat_id)
         if not tg_user:
             return
         building = await Buildings.objects.aget(id = building_id)

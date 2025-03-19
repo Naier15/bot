@@ -168,17 +168,20 @@ class User:
      
     # Добавление и валидация номера телефона
     async def set_phone(self, msg: types.Message) -> bool:
-        phone = msg.contact.phone_number.strip().replace(' ', '').replace('-', '')
-        if len(phone) == 11 and phone.startswith('7'):
-            phone = f'8{phone[1:]}'
-        elif len(phone) == 12 and phone.startswith('+7'):
-            phone = f'8{phone[2:]}'
+        try:
+            phone = msg.contact.phone_number.strip().replace(' ', '').replace('-', '')
+            if len(phone) == 11 and phone.startswith('7'):
+                phone = f'8{phone[1:]}'
+            elif len(phone) == 12 and phone.startswith('+7'):
+                phone = f'8{phone[2:]}'
 
-        if len(phone) == 11:
-            self.id = msg.chat.id
-            self.phone = phone
-            return True
-        else:
+            if len(phone) == 11:
+                self.id = msg.chat.id
+                self.phone = phone
+                return True
+            else:
+                return False
+        except Exception as ex:
             return False
         
     # Добавление и валидация логина
