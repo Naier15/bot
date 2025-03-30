@@ -5,11 +5,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import Config
 from app import App, log
-from pages import menu_router # Страница главного меню и раздел помощь
-from pages import buildings_router # Разделы квартир и офисов
-from pages import profile_router # Раздел профиля, его создания и редактирования
-from pages import subscription_router # Раздел подписок - просмотр, удаление
-from pages import property_router # Раздел добавления новой подписки
+from router import menu_router # Страница главного меню и раздел помощь
+from router import buildings_router # Разделы квартир и офисов
+from router import profile_router # Раздел профиля, его создания и редактирования
+from router import subscription_router # Раздел подписок - просмотр, удаление
+from router import property_router # Раздел добавления новой подписки
 
 
 config = Config()

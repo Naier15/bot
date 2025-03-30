@@ -5,7 +5,8 @@ from aiogram.fsm.state import State, StatesGroup
 import fuzzywuzzy
 import fuzzywuzzy.process
 
-from app import text, PageBuilder, App, log
+from app import text, PageBuilder, App, log, \
+    CityRepository, PropertyRepository, BuildingRepository
 from .menu import reload_handler
 from .subscription import menu, SubscriptionPage
 
@@ -22,8 +23,8 @@ class PropertyPage(StatesGroup):
 async def start(msg: types.Message, state: FSMContext):
     log(start) 
     async with App(state) as app:
-        app.new_subscription()
-        cities = await app.database.get_cities()
+        await app.user.new_subscription()
+        cities = await CityRepository().get()
         buttons = PageBuilder.using(cities).current() 
         if not buttons:
             return
@@ -77,11 +78,11 @@ async def city_error(msg: types.Message, state: FSMContext):
 async def city(call: types.CallbackQuery, state: FSMContext):
     log(city) 
     async with App(state) as app:
-        city_id = app.subscription.city_id if call.data == 'back' else call.data
-        if not await app.subscription.set(city_id = city_id):
+        city_id = app.user.added_subscription.city_id if call.data == 'back' else call.data
+        if not await app.user.added_subscription.set(city_id = city_id):
             return
     
-        properties = await app.database.get_properties(app.subscription.city_id)
+        properties = await PropertyRepository().get(app.user.added_subscription.city_id)
         if len(properties) == 0:
             await app.go_back(state)
             await call.message.answer(text.no_property)
@@ -104,7 +105,7 @@ async def property_error(msg: types.Message, state: FSMContext):
     if await reload_handler(msg, state):
         return  
     async with App(state) as app:
-        properties = await app.database.get_properties(app.subscription.city_id)
+        properties = await PropertyRepository().get(app.user.added_subscription.city_id)
         results = fuzzywuzzy.process.extract(msg.text, properties, limit = 6)
         if len(results) == 0:
             return await msg.answer(text.choose_property_error)
@@ -120,14 +121,14 @@ async def property_error(msg: types.Message, state: FSMContext):
 async def property(call: types.CallbackQuery, state: FSMContext):
     log(property) 
     async with App(state) as app:
-        if not await app.subscription.set(property_id = call.data):
+        if not await app.user.added_subscription.set(property_id = call.data):
             return await call.message.answer(text.choose_property_error)
     
-        buildings = await app.database.get_buildings(app.subscription.property_id)
+        buildings = await BuildingRepository().get(app.user.added_subscription.property_id)
         if len(buildings) == 0:
             return
         elif len(buildings) == 1:
-            if not await app.subscription.set(building_id = buildings[0]['id']):
+            if not await app.user.added_subscription.set(building_id = buildings[0]['id']):
                 return
             await success(call, state)
         else:
@@ -151,7 +152,7 @@ async def buidling_error(msg: types.Message, state: FSMContext):
 async def building(call: types.CallbackQuery, state: FSMContext):
     log(building) 
     async with App(state) as app:
-        if not await app.subscription.set(building_id = call.data):
+        if not await app.user.added_subscription.set(building_id = call.data):
             return
     await success(call, state)
 
@@ -159,6 +160,6 @@ async def building(call: types.CallbackQuery, state: FSMContext):
 async def success(call: types.CallbackQuery, state: FSMContext):
     async with App(state) as app:
         await call.message.answer(text.subscription_success)
-        await app.save_subscription()
+        await app.user.save_subscription()
         await app.clear_history(state)
     await menu(call.message, state) 
