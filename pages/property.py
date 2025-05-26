@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 import fuzzywuzzy
 import fuzzywuzzy.process
 
-from app import text, PageBuilder, App, log
+from telegrambot.app import text, PageBuilder, App, log
 from .menu import reload_handler
 from .subscription import menu, SubscriptionPage
 

@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from .menu import get_menu, reload_handler
-from app import text, Markup, App, log
+from telegrambot.app import text, Markup, App, log
 
 
 router = Router()
@@ -20,7 +20,7 @@ async def main(msg: types.Message, state: FSMContext):
     log(main) 
     async with App(state) as app:
         await msg.answer(
-            f'ВАШ ПРОФИЛЬ:\n{app.user.get_data()}\n{'' if app.user.is_registed else text.login_empty}', 
+            f'ВАШ ПРОФИЛЬ:\n{app.user.get_data()}\n{"" if app.user.is_registed else text.login_empty}',
             reply_markup = Markup.bottom_buttons([
                 [types.KeyboardButton(text = text.Btn.EDIT.value)], 
                 [types.KeyboardButton(text = text.Btn.TO_MENU.value)]
@@ -83,7 +83,7 @@ async def edit_email(msg: types.Message, state: FSMContext):
             await msg.answer(text.password_tip)      
             return
 
-        await msg.answer(f' ПАРОЛЬ: {'*' * len(app.user.password)} '.center(40, '-'))
+        await msg.answer(f' ПАРОЛЬ: {"*" * len(app.user.password)} '.center(40, '-'))
         await msg.answer(
             text.choose_email, 
             reply_markup = Markup.bottom_buttons([

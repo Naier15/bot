@@ -3,7 +3,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from app import text, Markup, App, log
+from telegrambot.app import text, Markup, App, log
 
 
 router = Router()
