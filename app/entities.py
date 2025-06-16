@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
 
-from .database import Database
+from .repository import SubscriptionRepository, PhotoRepository, UserRepository
 from .utils import Markup, Tempfile
 from . import text
 from config import Config
@@ -21,12 +21,10 @@ config = Config()
 @dataclass
 class Subscription:
     def __init__(self,
-        database: Database,
         city_id: Optional[str] = None, 
         property_id: Optional[str] = None, 
         building_id: Optional[str] = None
     ) -> Self:
-        self.database: Database = database
         self.city_id: str = city_id
         self.property_id: str = property_id
         self.building_id: str = building_id
@@ -39,6 +37,8 @@ class Subscription:
         self.stage: Optional[str] = None
         self.date_release: Optional[str] = None
         self.date_info: Optional[str] = None
+        self.subscription_repository: SubscriptionRepository = SubscriptionRepository()
+        self.photo_repository: PhotoRepository = PhotoRepository()
 
     def __eq__(self, other: 'Subscription') -> bool:
         if not isinstance(other, Subscription):
@@ -66,19 +66,19 @@ class Subscription:
         return False
     
     # Сохранение подписки
-    async def save(self, chat_id: str) -> None:
+    async def save(self, chat_id: str, user_repository: UserRepository) -> None:
         await self.sync()
-        await self.database.save_subscription(chat_id, self.building_id)
+        await user_repository.save_subscription(chat_id, self.building_id)
 
     # Удаление подписки
-    async def remove(self, chat_id: str) -> None:
-        await self.database.remove_subscription(chat_id, self.building_id)
+    async def remove(self, chat_id: str, user_repository: UserRepository) -> None:
+        await user_repository.remove_subscription(chat_id, self.building_id)
 
     # Подтягивание всех данных из базы данных
     async def sync(self) -> bool:
         if not self.building_id:
             return False
-        data = await self.database.get_subscription_data(self.building_id)
+        data = await self.subscription_repository.get_subscription_data(self.building_id)
         self.url = data['url']
         self.photo_url = data['photo_url']
         self.property_name = data['property_name']
@@ -95,8 +95,8 @@ class Subscription:
 
         photo_ids = [id for id, _, _ in self.photos]
         if is_dispatch:
-            unseen_photos = await self.database.filter_unseen_photos(chat_id, self.building_id, photo_ids) 
-            [await self.database.make_photo_seen(chat_id, self.building_id, photo_id) for photo_id in photo_ids]
+            unseen_photos = await self.photo_repository.filter_unseen_photos(chat_id, self.building_id, photo_ids) 
+            [await self.photo_repository.make_photo_seen(chat_id, self.building_id, photo_id) for photo_id in photo_ids]
         else:
             unseen_photos = photo_ids
 
@@ -143,18 +143,18 @@ class Subscription:
 
 # Пользователь
 class User:
-    id: Optional[int] = None
-    phone: Optional[str] = None
-    is_registed: bool = False
-    is_sync: bool = False
-    login: Optional[str] = None
-    password: Optional[str] = None
-    email: Optional[str] = None
-    archive: list[str, str, str] = []
-    subscriptions: list[Subscription] = []
-
-    def __init__(self, database: Database) -> Self:
-        self.database = database
+    def __init__(self, user_repository: UserRepository) -> Self:
+        self.user_repository = user_repository
+        self.id: Optional[int] = None
+        self.phone: Optional[str] = None
+        self.is_registed: bool = False
+        self.is_sync: bool = False
+        self.login: Optional[str] = None
+        self.password: Optional[str] = None
+        self.email: Optional[str] = None
+        self.archive: list[str, str, str] = []
+        self.subscriptions: list[Subscription] = []
+        self.added_subscription: Optional[Subscription] = None
 
     # Формирование сообщения в профиле
     def get_data(self) -> str:
@@ -197,7 +197,7 @@ class User:
     async def is_valid_login(self) -> bool:
         if not self.login:
             raise ValueError('У пользователя еще нет логина')
-        return await self.database.is_user_valid(self.login)
+        return await self.user_repository.is_user_valid(self.login)
         
     # Добавление и валидация пароля
     async def set_password(self, msg: types.Message) -> bool:
@@ -224,12 +224,12 @@ class User:
     # Сохранение в базе временного и постоянного пользователя
     async def save(self, temporary: bool = False) -> Optional[str]:
         if temporary:
-            if not await self.database.has_temp_user(self.id):
-                await self.database.create_temp_user(self.id, self.phone)
+            if not await self.user_repository.has_temp_user(self.id):
+                await self.user_repository.create_temp_user(self.id, self.phone)
         else:
-            is_valid = await self.database.is_user_valid(self.login)
+            is_valid = await self.user_repository.is_user_valid(self.login)
             if is_valid:
-                await self.database.create_user(self.id, self.login, self.password, self.email)
+                await self.user_repository.create_user(self.id, self.login, self.password, self.email)
                 self.is_registed = True
             else:
                 return text.Error.user_exists.value
@@ -241,7 +241,7 @@ class User:
         if not self.id:
             self.id = chat_id
             
-        tg_user = await self.database.get_user(self.id) 
+        tg_user = await self.user_repository.get_user(self.id) 
         if not tg_user:
             return False
         
@@ -252,13 +252,29 @@ class User:
         self.login = tg_user.user_profile.user.username
         self.email = tg_user.user_profile.user.email if tg_user.user_profile.user.email else None
         self.subscriptions = [
-            Subscription(database = self.database, building_id = str(building.id)) 
+            Subscription(building_id = str(building.id)) 
             for building in await sync_to_async(tg_user.building.all)()
         ]
         [await x.sync() for x in self.subscriptions]
         [x.photos for x in self.subscriptions]
         self.is_sync = True
         return True
+    
+    # Создание новой пустой подписки
+    async def new_subscription(self) -> Subscription:
+        self.added_subscription = Subscription()
+        return self.added_subscription
+
+    # Добавление текущей подписки в список подписок пользователя
+    async def save_subscription(self) -> None:
+        found_subscription = [
+            True for sub in self.subscriptions 
+            if sub.building_id == self.added_subscription.building_id
+        ]
+        if not found_subscription:
+            await self.added_subscription.save(self.id, self.user_repository)
+            self.subscriptions += [self.added_subscription]
+        self.added_subscription = None
     
     # Сохранение данных пользователя перед редактированием профиля
     async def push_to_archive(self) -> None:
@@ -282,6 +298,7 @@ class User:
             [types.InlineKeyboardButton(text = f'{sub.property_name}, дом {sub.house_num}', callback_data = sub.building_id)]
             for sub in self.subscriptions
         ]
+    
 
 # Логика приложения
 class App:
@@ -294,9 +311,7 @@ class App:
                 default = DefaultBotProperties(parse_mode = ParseMode.HTML)
             )
         self.history: list[State] = []
-        self.database: Database = Database()
-        self.user: User = User(self.database)
-        self.subscription: Optional[Subscription] = None
+        self.user: User = User(UserRepository())
         self.instance: Optional[Self] = None
         self.state = state
 
@@ -336,27 +351,11 @@ class App:
             [types.KeyboardButton(text = text.Btn.HELP.value)]
         ]
         return Markup.bottom_buttons(btns)
-
-    # Создание новой пустой подписки
-    def new_subscription(self) -> Subscription:
-        self.subscription = Subscription(database = self.database)
-        return self.subscription
-
-    # Добавление текущей подписки в список подписок пользователя
-    async def save_subscription(self) -> None:
-        found_subscription = [
-            True for sub in self.user.subscriptions 
-            if sub.building_id == self.subscription.building_id
-        ]
-        if not found_subscription:
-            await self.subscription.save(self.user.id)
-            self.user.subscriptions += [self.subscription]
-        self.subscription = None
     
     # Отчистка истории страниц
     async def clear_history(self, state: FSMContext, with_user: bool = False):
         if with_user:
-            self.user = User(self.database)
+            self.user = User(UserRepository())
         self.history.clear()
         await state.clear()
 
@@ -383,9 +382,10 @@ class App:
     # Рассылка клиентам
     async def dispatch_to_clients(self) -> None:
         logging.info(f'{datetime.datetime.now()} DISPATCHING')
-        chats = await self.database.clients_dispatch()
+        user_repository = UserRepository()
+        chats = await user_repository.clients_dispatch()
         async for chat_id in chats:
-            user = User(database = self.database)
+            user = User(user_repository)
             await user.sync(chat_id)
 
             for subscription in user.subscriptions:

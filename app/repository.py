@@ -16,10 +16,11 @@ from cabinet.models import FavoritesFlats, FavoritesCommercial, UserSubscription
 from property.templatetags.view_price import price
 
 
-# Все запросы к базе данных
-class Database:
+# Слой доступа к данным для взаимодействия с базой данными
+
+class CityRepository:
     # Получение городов
-    async def get_cities(self) -> list[dict]:
+    async def get(self) -> list[dict]:
         cities = []
         async for x in City.objects.filter(event = False).order_by('city_name'):
             cities.append({
@@ -28,9 +29,10 @@ class Database:
                 'url': f'{config.DJANGO_HOST}/property/{x.city_slug}/'
             })
         return cities
-
+    
+class PropertyRepository:
     # Получение ЖК по городу
-    async def get_properties(self, city_id: str) -> list:
+    async def get(self, city_id: str) -> list:
         properties = []
         async for x in Property.objects.filter(city_id = int(city_id)).order_by('name'):
             properties.append({
@@ -39,8 +41,9 @@ class Database:
             })
         return properties
     
+class BuildingRepository:
     # Получение зданий по ЖК
-    async def get_buildings(self, property_id: str) -> list:
+    async def get(self, property_id: str) -> list:
         buildings = []
         async for x in Buildings.objects.filter(fk_property = int(property_id)).order_by('num_dom'):
             buildings.append({
@@ -49,6 +52,7 @@ class Database:
             })
         return buildings
     
+class SubscriptionRepository:
     # Данные по подписке на здание
     async def get_subscription_data(self, building_id: str) -> dict:
         building = await Buildings.objects.aget(id = int(building_id))
@@ -98,6 +102,7 @@ class Database:
             'date_info': date_info
         }
     
+class PhotoRepository:
     # Отметить, что фото было уже просмотрено в ежедневной рассылке
     async def make_photo_seen(self, chat_id: str, building_id: int, photo_id: int) -> None:
         building = await Buildings.objects.aget(id = building_id)
@@ -115,6 +120,7 @@ class Database:
                 photos.remove(photo.photo.id)
         return photos
     
+class UserRepository:
     # Получить временную запись пользователя
     async def has_temp_user(self, chat_id: str) -> bool:
         try:
