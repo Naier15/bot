@@ -98,10 +98,11 @@ class PageBuilder:
     
 # Подключение к Django
 def connect_django(path_to_django: str):
-	sys.path.append(path_to_django)
-	os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
-	django.setup()
-	print(f'--- Connected to Django models - {django.conf.settings.configured} ---')
+    sys.path.append(path_to_django)
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
+    if not django.conf.settings.configured:
+        django.setup()
+        print(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
 # Логгирование
 def log(func: Callable, info: Optional[str] = None):

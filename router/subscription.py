@@ -3,10 +3,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from .menu import get_menu, reload_handler
-from telegrambot.app import text, Markup, App, log
-from telegrambot.app.database import get_favorites_subscr, Database, remove_user_favorites_flat, \
-    remove_user_favorites_commercial
+from telegrambot.app import text, Markup, App, log, UserRepository, \
+    get_favorites_subscr, remove_user_favorites_flat, remove_user_favorites_commercial
 from telegrambot.models import TgUser
+
 
 router = Router()
 
@@ -143,7 +143,7 @@ async def choice(msg: types.Message, state: FSMContext):
 async def send_favorites_obj():
     get_favorites = await get_favorites_subscr()
     for user_subscr in get_favorites:
-        res_user_obj = await Database().get_favorites_obj(user_subscr.user)
+        res_user_obj = await UserRepository().get_favorites_obj(user_subscr.user)
         for text_item in res_user_obj:
             if user_subscr.user.telegramchat_set.first():
                 await App().bot.send_message(chat_id=user_subscr.user.telegramchat_set.first().telegram_id,

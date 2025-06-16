@@ -10,10 +10,11 @@ from router import buildings_router # Разделы квартир и офис�
 from router import profile_router # Раздел профиля, его создания и редактирования
 from router import subscription_router # Раздел подписок - просмотр, удаление
 from router import property_router # Раздел добавления новой подписки
+from router import send_favorites_obj
 
 
 config = Config()
-from telegrambot.pages.subscription import send_favorites_obj
+
 logging.basicConfig(
     filename = os.path.abspath(os.path.join(os.path.dirname(__file__), config.LOG_FILE)),
     level = logging.INFO, 

@@ -130,7 +130,7 @@ class Subscription:
             except Exception as ex:
                 exception = ex
                 try:
-                    for id, url, month in photos_to_show:
+                    for id, url, month in photos_to_show: 
                         ext = url.split('.')[-1]
                         async with Tempfile(f'{id}.{ext}', url) as tempfile:
                             photo = types.InputMediaPhoto(
