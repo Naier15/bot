@@ -316,7 +316,7 @@ class App:
         self.state = state
 
     async def __aenter__(self) -> Self:
-        self.instance = await App.get(self.state)
+        self.instance = await App.new(self.state)
         return self.instance
     
     async def __aexit__(self, exc_type, exc, tb) -> None:
@@ -324,7 +324,7 @@ class App:
         
     # Получение экземпляра App пользователя
     @staticmethod
-    async def get(state: FSMContext) -> Self:
+    async def new(state: FSMContext) -> Self:
         data = await state.get_data()
         app = data.get('app')
         if not app:
