@@ -2,7 +2,7 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from .menu import get_menu, reload_handler
+from .menu import get_menu, reload
 from telegrambot.app import text, Markup, App, log
 
 
@@ -16,8 +16,8 @@ class ProfilePage(StatesGroup):
     
 # Раздел Профиль - Главное меню
 @router.message(F.text == text.Btn.PROFILE.value)
+@log
 async def main(msg: types.Message, state: FSMContext):   
-    log(main) 
     async with App(state) as app:
         await msg.answer(
             f'ВАШ ПРОФИЛЬ:\n{app.user.get_data()}\n{"" if app.user.is_registed else text.login_empty}',
@@ -30,8 +30,8 @@ async def main(msg: types.Message, state: FSMContext):
 
 # Создание профиля и запрос логина
 @router.message(ProfilePage.start, F.text == text.Btn.EDIT.value)
+@log
 async def edit_login(msg: types.Message, state: FSMContext):
-    log(edit_login) 
     async with App(state) as app:
         await app.user.push_to_archive()
     await msg.answer(
@@ -44,8 +44,8 @@ async def edit_login(msg: types.Message, state: FSMContext):
 
 # Сохранение логина и запрос пароля
 @router.message(ProfilePage.start)
+@log
 async def edit_password(msg: types.Message, state: FSMContext):
-    log(edit_password) 
     async with App(state) as app:
         if msg.text == text.Btn.TO_MENU.value:
             await app.user.pop_from_archive()
@@ -71,10 +71,9 @@ async def edit_password(msg: types.Message, state: FSMContext):
 
 # Сохранение пароля и запрос email или пропустить
 @router.message(ProfilePage.login)
-async def edit_email(msg: types.Message, state: FSMContext):
-    log(edit_email)    
-    if await reload_handler(msg, state):
-        return
+@log
+@reload
+async def edit_email(msg: types.Message, state: FSMContext):   
     async with App(state) as app:  
         if msg.text == text.Btn.TO_MENU.value:
             await app.user.pop_from_archive()
@@ -95,10 +94,9 @@ async def edit_email(msg: types.Message, state: FSMContext):
 
 # Предложение подписки или заверщение регистрации
 @router.message(ProfilePage.password)
+@log
+@reload
 async def subscribe_or_finish(msg: types.Message, state: FSMContext):
-    log(subscribe_or_finish)
-    if await reload_handler(msg, state):
-        return
     async with App(state) as app:
         if msg.text == text.Btn.TO_MENU.value:
             await app.user.pop_from_archive()
@@ -124,11 +122,9 @@ async def subscribe_or_finish(msg: types.Message, state: FSMContext):
 
 # Завершение регистрации
 @router.message(ProfilePage.email)
+@log
+@reload
 async def finish(msg: types.Message, state: FSMContext):  
-    log(finish)  
-    if await reload_handler(msg, state):
-        return
-    
     async with App(state) as app:
         await app.clear_history(state)
     if msg.text == text.Btn.SUBSCRIBE.value:

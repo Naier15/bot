@@ -1,14 +1,15 @@
 from typing import Optional
 import secrets, string
 
+from .utils import connect_django, to_async
 from config import Config
 config = Config()
-from .utils import connect_django
 connect_django(config.DJANGO_PATH)
 
 from django.db.models import Q
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User as DjUser
+
 from authapp.models import UserProfile
 from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildingPhotos
 from telegrambot.models import TgUser, SeenPhoto
@@ -22,11 +23,13 @@ class CityRepository:
     # Получение городов
     async def get(self) -> list[dict]:
         cities = []
-        async for x in City.objects.filter(event = False).order_by('city_name'):
+        async for x in City.objects.filter(event = False) \
+                .values('id', 'city_name', 'city_slug') \
+                .order_by('city_name'):
             cities.append({
-                'id': str(x.id),
-                'name': x.city_name,
-                'url': f'{config.DJANGO_HOST}/property/{x.city_slug}/'
+                'id': str(x['id']),
+                'name': x['city_name'],
+                'url': f'{config.DJANGO_HOST}/property/{x['city_slug']}/'
             })
         return cities
     
@@ -34,21 +37,23 @@ class PropertyRepository:
     # Получение ЖК по городу
     async def get(self, city_id: str) -> list:
         properties = []
-        async for x in Property.objects.filter(city_id = int(city_id)).order_by('name'):
-            properties.append({
-                'id': str(x.id),
-                'name': x.name
-            })
+        async for x in Property.objects.filter(city_id = int(city_id)) \
+                .values('id', 'name') \
+                .order_by('name'):
+            x['id'] = str(x['id'])
+            properties.append(x)
         return properties
     
 class BuildingRepository:
     # Получение зданий по ЖК
     async def get(self, property_id: str) -> list:
         buildings = []
-        async for x in Buildings.objects.filter(fk_property = int(property_id)).order_by('num_dom'):
+        async for x in Buildings.objects.filter(fk_property = int(property_id)) \
+                .values('id', 'num_dom') \
+                .order_by('num_dom'):
             buildings.append({
-                'id': str(x.id),
-                'name': x.num_dom
+                'id': str(x['id']),
+                'name': x['num_dom']
             })
         return buildings
     

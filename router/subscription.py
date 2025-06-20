@@ -1,8 +1,10 @@
+import logging
+
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from .menu import get_menu, reload_handler
+from .menu import get_menu, reload
 from telegrambot.app import text, Markup, App, log, UserRepository, \
     get_favorites_subscr, remove_user_favorites_flat, remove_user_favorites_commercial
 from telegrambot.models import TgUser
@@ -16,8 +18,8 @@ class SubscriptionPage(StatesGroup):
 
 # Раздел Подписки - главное меню
 @router.message(F.text == text.Btn.SUBSCRIPTION.value)
+@log
 async def menu(msg: types.Message, state: FSMContext):
-    log(menu) 
     async with App(state) as app:
         await app.set_state(SubscriptionPage.menu, state)
         if not app.user.is_registed:
@@ -45,8 +47,8 @@ async def menu(msg: types.Message, state: FSMContext):
     
 # Список всех подписок
 @router.message(SubscriptionPage.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
+@log
 async def list(msg: types.Message, state: FSMContext):
-    log(list) 
     async with App(state) as app:
         subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
@@ -61,8 +63,8 @@ async def list(msg: types.Message, state: FSMContext):
 
 # Удаление подписки
 @router.message(SubscriptionPage.menu, F.text == text.Btn.REMOVE_SUBSCRIPTION.value)
+@log
 async def remove(msg: types.Message, state: FSMContext):
-    log(remove) 
     async with App(state) as app:
         subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
@@ -79,16 +81,15 @@ async def remove(msg: types.Message, state: FSMContext):
 
 # Ошибка удаления подписки
 @router.message(SubscriptionPage.remove, F.text)
+@log
+@reload
 async def remove_error(msg: types.Message, state: FSMContext):
-    log(remove_error)
-    if await reload_handler(msg, state):
-        return
     await msg.answer(text.choose_property_error)
 
 # Удаление подписки и возвращение в главное меню раздела Подписки
 @router.callback_query(SubscriptionPage.remove, F.data)
+@log
 async def remove_result(call: types.CallbackQuery, state: FSMContext):
-    log(remove_result)
     async with App(state) as app:
         if call.data == 'back':
             await app.go_back(state)
@@ -108,8 +109,8 @@ async def remove_result(call: types.CallbackQuery, state: FSMContext):
 
 # Карточка подписки ЖК
 @router.callback_query(SubscriptionPage.menu)
+@log
 async def subscription_card(call: types.CallbackQuery, state: FSMContext):
-    log(subscription_card)
     async with App(state) as app:
         if call.data == 'back': 
             return await menu(call.message, state)
@@ -119,11 +120,9 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
 
 # Выбор кнопок меню
 @router.message(SubscriptionPage.menu)
+@log
+@reload
 async def choice(msg: types.Message, state: FSMContext):
-    log(choice)
-    if await reload_handler(msg, state):
-        return
-    
     if msg.text == text.Btn.TO_MENU.value:
         return await get_menu(msg, state)
     elif msg.text == text.Btn.NEW_SUBSCRIPTION.value:
@@ -146,7 +145,7 @@ async def send_favorites_obj():
         res_user_obj = await UserRepository().get_favorites_obj(user_subscr.user)
         for text_item in res_user_obj:
             if user_subscr.user.telegramchat_set.first():
-                await App().bot.send_message(chat_id=user_subscr.user.telegramchat_set.first().telegram_id,
+                await App.bot.send_message(chat_id=user_subscr.user.telegramchat_set.first().telegram_id,
                                              text='<strong>Уведомление об изменение цен в избранном в вашем личном '
                                                   'кабинете</strong>\n\n' + text_item['text'], parse_mode='html',
                                              reply_markup=Markup.inline_buttons(
@@ -157,18 +156,19 @@ async def send_favorites_obj():
                     if user_profile:
                         tg_user = TgUser.objects.filter(user_profile=user_profile).first()
                         if tg_user:
-                            await App().bot.send_message(chat_id=tg_user.chat_id,
+                            await App.bot.send_message(chat_id=tg_user.chat_id,
                                                          text='<strong>Уведомление об изменение цен в избранном в вашем личном '
                                                           'кабинете</strong>\n\n' + text_item['text'], parse_mode='html',
                                                      reply_markup=Markup.inline_buttons(
                         [[types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')]]))
                 except Exception as e:
-                    print('err = ', e)
+                    logging.error('err = ', e)
 
 
 # Удаление из избранного квартир и коммерции, добавленных в личном кабинете (Callback func при отправке уведомлений
 # об изменении цен в избранном)
 @router.callback_query(F.data.startswith('delete_'))
+@log
 async def remove_result(call: types.CallbackQuery):
     obj_id = call.data.split('_')[-1]
     if call.data.startswith('delete_flat'):

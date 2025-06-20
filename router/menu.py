@@ -1,3 +1,6 @@
+from functools import wraps
+from typing import Coroutine
+
 from aiogram import Router, F, types
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -11,10 +14,22 @@ router = Router()
 class MenuPage(StatesGroup):
     phone = State()
 
+
+# Декоратор для возвращения в главное меню - использовать в обработчиках в каком-то состоянии (StatesGroup)
+def reload(coro: Coroutine):
+    @wraps(coro)
+    async def wrapper(msg: types.Message, state: FSMContext):
+        async with App(state) as app:
+            if msg.text == text.Btn.START.value:
+                await app.clear_history(state, with_user = True)
+                return await start(msg, state)
+        return await coro(msg, state)
+    return wrapper
+
 # Начало 
 @router.message(CommandStart())
+@log
 async def start(msg: types.Message, state: FSMContext):
-    log(start)
     async with App(state) as app:
         await app.clear_history(state, with_user = True)
         await msg.answer(
@@ -27,10 +42,9 @@ async def start(msg: types.Message, state: FSMContext):
 
 # Получение номера телефона 
 @router.message(MenuPage.phone, F.contact | F.text)
+@log
+@reload
 async def get_contact(msg: types.Message, state: FSMContext):
-    log(get_contact)
-    if await reload_handler(msg, state):
-        return
     async with App(state) as app:
         if await app.user.set_phone(msg):
             await app.user.save(temporary = True)
@@ -46,8 +60,8 @@ async def get_contact(msg: types.Message, state: FSMContext):
 
 # Раздел Помощь
 @router.message(F.text == text.Btn.HELP.value)
+@log
 async def help(msg: types.Message):
-    log(help)
     await msg.answer(
         text.help, 
         reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
@@ -55,8 +69,8 @@ async def help(msg: types.Message):
 
 # Триггер на кнопки Назад и Пропустить
 @router.message(F.text.in_([text.Btn.BACK.value, text.Btn.SKIP.value]))
+@log
 async def back(msg: types.Message, state: FSMContext):
-    log(back)
     async with App(state) as app:
         next_page = await app.go_back(state)
         if not next_page:
@@ -65,8 +79,8 @@ async def back(msg: types.Message, state: FSMContext):
 # Команда меню и другие непонятные запросы
 @router.message(Command('menu'))
 @router.message(F.text)
+@log
 async def get_menu(msg: types.Message, state: FSMContext):
-    log(get_menu)
     async with App(state) as app:
         await app.clear_history(state)
         if not await app.user.sync(msg.chat.id):
@@ -75,11 +89,3 @@ async def get_menu(msg: types.Message, state: FSMContext):
         text.Btn.MENU.value, 
         reply_markup = App.menu()
     )
-
-async def reload_handler(msg: types.Message, state: FSMContext) -> bool:
-    async with App(state) as app:
-        if msg.text == text.Btn.START.value:
-            await app.clear_history(state, with_user = True)
-            await start(msg, state)
-            return True
-    return False

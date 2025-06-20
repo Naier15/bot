@@ -17,13 +17,13 @@ config = Config()
 
 logging.basicConfig(
     filename = os.path.abspath(os.path.join(os.path.dirname(__file__), config.LOG_FILE)),
-    level = logging.INFO, 
+    level = logging.DEBUG, 
     format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     encoding = 'utf-8'
 )
 
+@log
 async def main():
-    log(main)
     app = App()
     await app.bot.delete_webhook(drop_pending_updates = True)  
     if config.TO_SET_COMMANDS:

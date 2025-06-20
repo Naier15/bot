@@ -1,11 +1,16 @@
+from functools import partial, wraps
+
 import aiofiles.os
 from aiogram import types
 from PIL import Image
 from io import BytesIO
-from typing import Callable, Optional, Self
+from typing import Optional, Self, Coroutine
 import logging, inspect, math, os, sys, django, aiohttp, aiofiles
 import django.conf
+from asgiref.sync import sync_to_async
 
+
+to_async = partial(sync_to_async, thread_sensitive = False)
 
 # Помощник создания markup и inline кнопок
 class Markup:
@@ -104,14 +109,23 @@ def connect_django(path_to_django: str):
         django.setup()
         print(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
-# Логгирование
-def log(func: Callable, info: Optional[str] = None):
-    print(os.path.abspath(inspect.getfile(func)), func.__name__)
-    logger = logging.getLogger(os.path.abspath(inspect.getfile(func)))
-    message = func.__name__
-    if info:
-        message += f' - {info}'
-    logger.info(message)
+# Декоратор для логгирования
+def log(coro: Coroutine, info: Optional[str] = None):
+    @wraps(coro)
+    async def wrapper(*args, **kwargs):
+        print(os.path.abspath(inspect.getfile(coro)), coro.__name__)
+        logger = logging.getLogger(os.path.abspath(inspect.getfile(coro)))
+        message = coro.__name__
+        try:
+            result = await coro(*args, **kwargs)
+        except Exception as ex:
+            logger.error(ex)
+        else:
+            if info:
+                message += f' - {info}'
+            logger.debug(message)
+            return result
+    return wrapper
 
 class Tempfile:
     def __init__(self, temp_name: str, url: str) -> Self:
