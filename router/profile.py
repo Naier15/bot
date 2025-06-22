@@ -11,6 +11,7 @@ router = Router()
 @log
 async def main(msg: types.Message, state: FSMContext):   
     async with App(state) as app:
+        await app.user.sync(msg.chat.id)
         await msg.answer(
             f'ВАШ ПРОФИЛЬ:\n{app.user.get_data()}',
             reply_markup = Markup.bottom_buttons([

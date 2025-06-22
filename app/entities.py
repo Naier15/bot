@@ -162,7 +162,7 @@ class User:
             f'- ЛОГИН 😉 <b><code>{self.login}</code></b>\n'
             f'- ТЕЛЕФОН 📞 <b><code>{self.phone}</code></b>\n'
             f'- EMAIL 📧 <b><code>{self.email}</code></b>\n'
-            '\n<i>🔹 Нажмите на логин, email или телефон, чтобы их скопировать</i>'
+            '\n<i>🔹 Нажмите на логин, телефон или email, чтобы их скопировать</i>'
         )
     
     # Добавление id
@@ -208,15 +208,14 @@ class User:
             return False
         
     # Добавление и валидация email
-    async def set_email(self, msg: types.Message) -> bool:
-        email = msg.text.strip()
-        await msg.delete()
+    async def set_email(self, email: str) -> bool:
         if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
             self.email = email
-            await msg.answer(f' EMAIL: {email} '.center(40, '-'))
+            success = await self.user_repository.set_email(self.id, self.email)
+            if not success:
+                return False
             return True
-        else:
-            await msg.answer(text.email_tip)      
+        else:    
             return False
         
     # Проверка существования пользователя

@@ -116,13 +116,12 @@ def log(coro: Coroutine):
     async def wrapper(*args, **kwargs):
         print(os.path.abspath(inspect.getfile(coro)), coro.__name__)
         logger = logging.getLogger(os.path.abspath(inspect.getfile(coro)))
-        message = coro.__name__
         try:
             result = await coro(*args, **kwargs)
         except Exception as ex:
-            logger.error(ex)
+            logger.error(f'{coro.__name__} - {ex}')
         else:
-            logger.debug(message)
+            logger.debug(coro.__name__)
             return result
     return wrapper
 

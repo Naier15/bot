@@ -13,6 +13,7 @@ router = Router()
 
 class MenuPage(StatesGroup):
     phone = State()
+    email = State()
 
 
 # Декоратор для возвращения в главное меню - использовать в обработчиках в каком-то состоянии (StatesGroup)
@@ -53,6 +54,9 @@ async def get_contact(msg: types.Message, state: FSMContext):
                 saved = await app.user.save()
                 if not saved:
                     return await msg.answer(text.error, reply_markup = Markup.no_buttons())
+                await msg.answer(text.choose_email, reply_markup = Markup.no_buttons())
+                await app.set_state(MenuPage.email, state)
+                return
             await app.go_back(state)
             await get_menu(msg, state)
         else:
@@ -62,6 +66,18 @@ async def get_contact(msg: types.Message, state: FSMContext):
                     [types.KeyboardButton(text = text.phone_button, request_contact = True)] 
                 ])
             )
+
+# Регистрация email
+@router.message(MenuPage.email, F.text)
+@log
+@reload
+async def get_email(msg: types.Message, state: FSMContext):
+    async with App(state) as app:
+        if await app.user.set_email(msg.text.strip()):
+            await app.go_back(state) 
+            await get_menu(msg, state)
+        else:
+            await msg.answer(text.email_tip, reply_markup = Markup.no_buttons())
 
 # Раздел Помощь
 @router.message(F.text == text.Btn.HELP.value)
@@ -90,6 +106,10 @@ async def get_menu(msg: types.Message, state: FSMContext):
         await app.clear_history()
         if not await app.user.sync(msg.chat.id):
             return
+    if not app.user.email:
+        await msg.answer(text.choose_email, reply_markup = Markup.no_buttons())
+        await app.set_state(MenuPage.email, state)
+        return
     await msg.answer(
         text.Btn.MENU.value, 
         reply_markup = App.menu()

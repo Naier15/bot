@@ -59,16 +59,29 @@ class BuildingRepository:
 class SubscriptionRepository:
     # Данные по подписке на здание
     async def get(self, building_id: str) -> dict:
-        building = await Buildings.objects.aget(id = int(building_id))
-        property_id = building.fk_property.pk
-        property_name = building.fk_property.name
-        slug = building.fk_property.slug
-        city = building.fk_property.city.city_slug
-        pass_keys = await to_async(CheckTermsPassKeys.objects.filter(fk_object = building).first)()
+        building = await to_async(
+            Buildings.objects.select_related('fk_property', 'fk_property__city') \
+            .filter(id = int(building_id))\
+            .values(
+                'id',
+                'fk_property__pk', \
+                'fk_property__name', \
+                'fk_property__slug', \
+                'fk_property__city__city_name', \
+                'build_stage', \
+                'operation_term', \
+                'num_dom'
+            ).first
+        )()
+        property_id = building['fk_property__pk']
+        property_name = building['fk_property__name']
+        slug = building['fk_property__slug']
+        city = building['fk_property__city__city_name']
+        pass_keys = await to_async(CheckTermsPassKeys.objects.filter(fk_object = building['id']).first)()
         last_photos = [ 
             await to_async(
                 BuildingPhotos.objects.select_related('fk_month') \
-                    .filter(Q(fk_month__fk_building = building) & Q(build_img__isnull = False))
+                    .filter(Q(fk_month__fk_building = building['id']) & Q(build_img__isnull = False))
                     .order_by('-fk_month__build_date')
                     .first
             )()
@@ -78,7 +91,7 @@ class SubscriptionRepository:
             for photo in last_photos 
         ]
 
-        stage = building.build_stage
+        stage = building['build_stage']
         if stage == 'b':
             stage = 'Строится'
         elif stage == 'p':
@@ -89,8 +102,8 @@ class SubscriptionRepository:
         if pass_keys:
             date_release = pass_keys.changed_date
             date_info = pass_keys.note
-        elif building.operation_term:
-            date_release = building.operation_term
+        elif building['operation_term']:
+            date_release = building['operation_term']
             date_info = 'Без изменений'
         else:
             date_release = 'Не указано'
@@ -99,7 +112,7 @@ class SubscriptionRepository:
         return {
             'id': building_id,
             'property_name': property_name,
-            'house_number': building.num_dom,
+            'house_number': building['num_dom'],
             'url': f'{config.DJANGO_HOST}/property/{city}/{property_id}/{slug}/',
             'photo_url': f'{config.DJANGO_HOST}/property/{city}/{property_id}/{slug}/#building_photo',
             'photos': photos,
@@ -127,7 +140,6 @@ class PhotoRepository:
 class UserRepository:
 
     # Создать пользователя
-    @log
     async def create_user(self, chat_id: str, login: str, phone_number: str, email: Optional[str] = None) -> bool:
         with transaction.atomic():
             alphabet = string.ascii_letters + string.digits
@@ -150,10 +162,12 @@ class UserRepository:
         return False
 
     # Добавление email
-    async def set_email(self, chat_id: str, email: str):
-        user = await TgUser.objects.select_related('user_profile__user').aget(chat_id = chat_id)
-        user.user_profile.user.email = email
-        await user.asave()
+    async def set_email(self, chat_id: str, email: str) -> bool:
+        user = await self.get_user(chat_id = chat_id)
+        if not user:
+            return False
+        await DjUser.objects.filter(id = user.user_profile.user.id).aupdate(email = email)
+        return True
     
     # Получение пользователя
     async def get_user(self, chat_id: Optional[str] = None, name: Optional[str] = None) -> Optional[TgUser]:
@@ -161,7 +175,7 @@ class UserRepository:
             raise Exception('UserRepository.get_user() requires one parameter at least')
         try:
             if chat_id is not None:
-                return await TgUser.objects.aget(chat_id = chat_id)
+                return await TgUser.objects.select_related('user_profile__user').aget(chat_id = chat_id)
             elif name is not None:
                 return await TgUser.objects.select_related('user_profile__user').aget(
                     user_profile__user__username = name
