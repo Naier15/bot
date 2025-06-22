@@ -194,11 +194,6 @@ class User:
         else:
             return False
         
-    async def is_valid_login(self) -> bool:
-        if not self.login:
-            raise ValueError('У пользователя еще нет логина')
-        return await self.user_repository.is_user_valid(self.login)
-        
     # Добавление и валидация пароля
     async def set_password(self, password: str) -> bool:
         if len(password) > 7:
@@ -280,22 +275,6 @@ class User:
             await self.added_subscription.save(self.id, self.user_repository)
             self.subscriptions += [self.added_subscription]
         self.added_subscription = None
-    
-    # Сохранение данных пользователя перед редактированием профиля
-    async def push_to_archive(self) -> None:
-        self.archive = [self.login, self.password, self.email]
-
-    # Если в архиве есть данные пользователя и редактирование прервалось, возвращаем данные из архива
-    async def pop_from_archive(self) -> None:
-        if len(self.archive) > 0:
-            self.login = self.archive[0]
-            self.password = self.archive[1]
-            self.email = self.archive[2]
-            self.archive.clear()
-
-    # Отчистка данных
-    async def clear_data(self) -> None:
-        self.password = None
 
     # Формирование подписок как inline кнопок
     async def form_subscriptions_as_buttons(self) -> list:

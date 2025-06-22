@@ -115,7 +115,7 @@ async def get_menu(msg: types.Message, state: FSMContext):
     async with App(state) as app:
         await app.clear_history()
         if not await app.user.sync(msg.chat.id):
-            return
+            return await start(msg, state)
     if not app.user.email:
         await msg.answer(text.choose_email, reply_markup = Markup.no_buttons())
         await app.set_state(MenuPage.email, state)
