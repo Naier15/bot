@@ -21,7 +21,7 @@ def reload(coro: Coroutine):
     async def wrapper(msg: types.Message, state: FSMContext):
         async with App(state) as app:
             if msg.text == text.Btn.START.value:
-                await app.clear_history(state, with_user = True)
+                await app.clear_history(with_user = True)
                 return await start(msg, state)
         return await coro(msg, state)
     return wrapper
@@ -31,7 +31,7 @@ def reload(coro: Coroutine):
 @log
 async def start(msg: types.Message, state: FSMContext):
     async with App(state) as app:
-        await app.clear_history(state, with_user = True)
+        await app.clear_history(with_user = True)
         await msg.answer(
             text.introduction,
             reply_markup = Markup.bottom_buttons([ 
@@ -40,14 +40,19 @@ async def start(msg: types.Message, state: FSMContext):
         )
         await app.set_state(MenuPage.phone, state)
 
-# Получение номера телефона 
+# Регистрация пользователя
 @router.message(MenuPage.phone, F.contact | F.text)
 @log
 @reload
 async def get_contact(msg: types.Message, state: FSMContext):
     async with App(state) as app:
-        if await app.user.set_phone(msg):
-            await app.user.save(temporary = True)
+        if await app.user.set_phone(msg.contact.phone_number.strip().replace(' ', '').replace('-', '')):
+            await app.user.set_id(msg.chat.id)
+            await app.user.set_login(msg.from_user.username)
+            if not await app.user.is_exist():
+                saved = await app.user.save()
+                if not saved:
+                    return await msg.answer(text.error, reply_markup = Markup.no_buttons())
             await app.go_back(state)
             await get_menu(msg, state)
         else:
@@ -82,7 +87,7 @@ async def back(msg: types.Message, state: FSMContext):
 @log
 async def get_menu(msg: types.Message, state: FSMContext):
     async with App(state) as app:
-        await app.clear_history(state)
+        await app.clear_history()
         if not await app.user.sync(msg.chat.id):
             return
     await msg.answer(

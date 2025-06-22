@@ -22,28 +22,17 @@ class SubscriptionPage(StatesGroup):
 async def menu(msg: types.Message, state: FSMContext):
     async with App(state) as app:
         await app.set_state(SubscriptionPage.menu, state)
-        if not app.user.is_registed:
-            await app.user.sync(msg.chat.id)
-
-        if not app.user.is_registed:
-            return await msg.answer( 
-                text.please_login, 
-                reply_markup = Markup.bottom_buttons([
-                    [types.KeyboardButton(text = text.Btn.EDIT.value)],
-                    [types.KeyboardButton(text = text.Btn.TO_MENU.value)]
-                ])
-            )
-        await msg.answer(
-            text.subscription_menu, 
-            reply_markup = Markup.bottom_buttons([
-                [types.KeyboardButton(text = text.Btn.SUBSCRIPTION_LIST.value)],
-                [
-                    types.KeyboardButton(text = text.Btn.NEW_SUBSCRIPTION.value), 
-                    types.KeyboardButton(text = text.Btn.REMOVE_SUBSCRIPTION.value)
-                ], 
-                [types.KeyboardButton(text = text.Btn.TO_MENU.value)]
-            ])
-        )
+    await msg.answer(
+        text.subscription_menu, 
+        reply_markup = Markup.bottom_buttons([
+            [types.KeyboardButton(text = text.Btn.SUBSCRIPTION_LIST.value)],
+            [
+                types.KeyboardButton(text = text.Btn.NEW_SUBSCRIPTION.value), 
+                types.KeyboardButton(text = text.Btn.REMOVE_SUBSCRIPTION.value)
+            ], 
+            [types.KeyboardButton(text = text.Btn.TO_MENU.value)]
+        ])
+    )
     
 # Список всех подписок
 @router.message(SubscriptionPage.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
@@ -52,7 +41,10 @@ async def list(msg: types.Message, state: FSMContext):
     async with App(state) as app:
         subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
-            return await msg.answer(text.subscription_empty, reply_markup = Markup.current())
+            return await msg.answer(
+                text.subscription_empty, 
+                reply_markup = Markup.current()
+            )
         await msg.answer(
             text.subscriptions, 
             reply_markup = Markup.inline_buttons(

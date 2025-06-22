@@ -1,4 +1,5 @@
 from functools import partial, wraps
+from time import perf_counter
 
 import aiofiles.os
 from aiogram import types
@@ -110,7 +111,7 @@ def connect_django(path_to_django: str):
         print(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
 # Декоратор для логгирования
-def log(coro: Coroutine, info: Optional[str] = None):
+def log(coro: Coroutine):
     @wraps(coro)
     async def wrapper(*args, **kwargs):
         print(os.path.abspath(inspect.getfile(coro)), coro.__name__)
@@ -121,10 +122,18 @@ def log(coro: Coroutine, info: Optional[str] = None):
         except Exception as ex:
             logger.error(ex)
         else:
-            if info:
-                message += f' - {info}'
             logger.debug(message)
             return result
+    return wrapper
+
+# Декоратор для отображения времени отработки функции
+def time(coro: Coroutine):
+    @wraps(coro)
+    async def wrapper(*args, **kwargs):
+        start = perf_counter()
+        result = await coro(*args, **kwargs)
+        print(f'[{coro.__name__}] takes {perf_counter() - start} seconds')
+        return result
     return wrapper
 
 class Tempfile:

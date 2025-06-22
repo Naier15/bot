@@ -1,20 +1,19 @@
 from typing import Optional
 import secrets, string
 
-from .utils import connect_django, to_async
+from .utils import connect_django, to_async, log
 from config import Config
 config = Config()
 connect_django(config.DJANGO_PATH)
-
-from django.db.models import Q
-from asgiref.sync import sync_to_async
-from django.contrib.auth.models import User as DjUser
-
 from authapp.models import UserProfile
 from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildingPhotos
 from telegrambot.models import TgUser, SeenPhoto
 from cabinet.models import FavoritesFlats, FavoritesCommercial, UserSubscription
 from property.templatetags.view_price import price
+
+from django.db.models import Q
+from django.contrib.auth.models import User as DjUser
+from django.db import transaction
 
 
 # Слой доступа к данным для взаимодействия с базой данными
@@ -59,18 +58,20 @@ class BuildingRepository:
     
 class SubscriptionRepository:
     # Данные по подписке на здание
-    async def get_subscription_data(self, building_id: str) -> dict:
+    async def get(self, building_id: str) -> dict:
         building = await Buildings.objects.aget(id = int(building_id))
         property_id = building.fk_property.pk
         property_name = building.fk_property.name
         slug = building.fk_property.slug
         city = building.fk_property.city.city_slug
-        pass_keys = await sync_to_async(CheckTermsPassKeys.objects.filter(fk_object = building).first)()
+        pass_keys = await to_async(CheckTermsPassKeys.objects.filter(fk_object = building).first)()
         last_photos = [ 
-            await sync_to_async(
-                BuildingPhotos.objects.filter(Q(fk_month__fk_building = building) & Q(build_img__isnull = False))
+            await to_async(
+                BuildingPhotos.objects.select_related('fk_month') \
+                    .filter(Q(fk_month__fk_building = building) & Q(build_img__isnull = False))
                     .order_by('-fk_month__build_date')
-                    .first)() 
+                    .first
+            )()
         ] 
         photos = [ 
             (photo.id, f'{config.DJANGO_HOST}{photo.build_img.url}', photo.fk_month.build_month) 
@@ -109,78 +110,68 @@ class SubscriptionRepository:
     
 class PhotoRepository:
     # Отметить, что фото было уже просмотрено в ежедневной рассылке
-    async def make_photo_seen(self, chat_id: str, building_id: int, photo_id: int) -> None:
+    async def make_photo_seen(self, user: TgUser, building_id: int, photo_id: int) -> None:
         building = await Buildings.objects.aget(id = building_id)
         photo = await BuildingPhotos.objects.aget(id = photo_id)
         seen_photo = await SeenPhoto.objects.acreate(photo = photo, building = building)
-        tg_user = await self.get_user(chat_id)
-        await tg_user.seen_photos.aadd(seen_photo)
+        await user.seen_photos.aadd(seen_photo)
 
     # Отфильтровать еще не просмотренные фото
-    async def filter_unseen_photos(self, chat_id: str, building_id: str, photos: list[int]) -> list[str]:
-        tg_user = await self.get_user(chat_id)
-        seen_photos = tg_user.seen_photos.filter(Q(building__id = building_id) & Q(photo__id__in = photos))
+    async def filter_unseen_photos(self, user: TgUser, building_id: str, photos: list[int]) -> list[str]:
+        seen_photos = user.seen_photos.filter(Q(building__id = building_id) & Q(photo__id__in = photos))
         for photo in seen_photos:
             while photo.photo.id in photos:
                 photos.remove(photo.photo.id)
         return photos
     
 class UserRepository:
-    # Получить временную запись пользователя
-    async def has_temp_user(self, chat_id: str) -> bool:
-        try:
-            tg_user = await self.get_user(chat_id)
-            return True if tg_user else False
-        except TgUser.DoesNotExist:
-            return False
-        
-    # Создать временного пользователя, чтобы связать с UserProfile
-    async def create_temp_user(self, chat_id: str, phone_number: str) -> None:
-        alphabet = string.ascii_letters + string.digits
-        temp_login = 'temp_' + ''.join(secrets.choice(alphabet) for _ in range(16))
-        user = await sync_to_async(DjUser.objects.create_user)(
-            username = temp_login,
-            password = temp_login
-        )
-        try:
-            profile = await UserProfile.objects.acreate(tel=phone_number, user=user)
-            await TgUser.objects.acreate(chat_id=chat_id, user_profile=profile)
-        except Exception:
-            profile = await sync_to_async(UserProfile.objects.filter(tel=phone_number).first)()
-            if profile:
-                tg_user = await sync_to_async(TgUser.objects.filter(user_profile=profile).first)()
-                if not tg_user:
-                    await TgUser.objects.acreate(chat_id=chat_id, user_profile=profile)
 
+    # Создать пользователя
+    @log
+    async def create_user(self, chat_id: str, login: str, phone_number: str, email: Optional[str] = None) -> bool:
+        with transaction.atomic():
+            alphabet = string.ascii_letters + string.digits
+            password = ''.join(secrets.choice(alphabet) for _ in range(16))
+            user = await to_async(DjUser.objects.create_user)(
+                username = login,
+                password = password,
+                email = email
+            )
+            profile = await UserProfile.objects.acreate(
+                tel = phone_number, 
+                user = user
+            )
+            await TgUser.objects.acreate(
+                chat_id = chat_id, 
+                user_profile = profile,
+                is_registed = True
+            )
+            return True
+        return False
 
-    # Проверка, что сможем добавить нового пользователя
-    async def is_user_valid(self, username: str) -> bool:
-        users = await sync_to_async(DjUser.objects.filter(username = username).all)()
-        if len(users) > 0:
-            return False
-        return True
-        
-    # Создание постоянного пользователя
-    async def create_user(self, chat_id: str, login: str, password: str, email: Optional[str]) -> None:
-        tg_user = await self.get_user(chat_id)
-        tg_user.user_profile.user.username = login
-        tg_user.is_registed = True
-        if email:
-            tg_user.user_profile.user.email = email
-        tg_user.user_profile.user.set_password(password)
-        await tg_user.user_profile.user.asave()
-        await tg_user.asave()
+    # Добавление email
+    async def set_email(self, chat_id: str, email: str):
+        user = await TgUser.objects.select_related('user_profile__user').aget(chat_id = chat_id)
+        user.user_profile.user.email = email
+        await user.asave()
     
-    # Получение постоянного пользователя
-    async def get_user(self, chat_id: str) -> Optional[TgUser]:
+    # Получение пользователя
+    async def get_user(self, chat_id: Optional[str] = None, name: Optional[str] = None) -> Optional[TgUser]:
+        if (chat_id is not None and name is not None) or (chat_id is None and name is None):
+            raise Exception('UserRepository.get_user() requires one parameter at least')
         try:
-            return await TgUser.objects.aget(chat_id = chat_id)
+            if chat_id is not None:
+                return await TgUser.objects.aget(chat_id = chat_id)
+            elif name is not None:
+                return await TgUser.objects.select_related('user_profile__user').aget(
+                    user_profile__user__username = name
+                )
         except TgUser.DoesNotExist:
             return None
 
     # Сохранить подписку пользователя
     async def save_subscription(self, chat_id: str, building_id: str) -> None:
-        tg_user = await self.get_user(chat_id)
+        tg_user = await self.get_user(chat_id = chat_id)
         if not tg_user:
             return
         building = await Buildings.objects.aget(id = building_id)
@@ -191,7 +182,7 @@ class UserRepository:
 
     # Удалить подписку у пользователя
     async def remove_subscription(self, chat_id: str, building_id: str) -> None:
-        tg_user = await self.get_user(chat_id)
+        tg_user = await self.get_user(chat_id = chat_id)
         if not tg_user:
             return
         building = await Buildings.objects.aget(id = building_id)
@@ -200,13 +191,13 @@ class UserRepository:
         await tg_user.building.aremove(building)
         await tg_user.asave()
         
-    # Ежедневная рассылка пользователям новостей
-    async def clients_dispatch(self) -> list[int]:
-        return await sync_to_async(TgUser.objects.values_list)('chat_id', flat = True)
+    # Получить список пользователей для ежедневной рассылки новостей
+    async def get_dispatch_list(self) -> list[int]:
+        return await to_async(TgUser.objects.values_list)('chat_id', flat = True)
 
     # Избранное квартир и коммерции в ЛК
     async def get_favorites_obj(self, subscr_user) -> list[str]:
-        fav_flats = await sync_to_async(FavoritesFlats.objects.filter(user=subscr_user).all)()
+        fav_flats = await to_async(FavoritesFlats.objects.filter(user=subscr_user).all)()
         text_list = []
         for fav_flat in fav_flats:
             if fav_flat.price and fav_flat.property_pk.price_history.first():
@@ -242,7 +233,7 @@ class UserRepository:
 
                     text_list.append({'id': f'flat_{fav_flat.id}', 'text':text})
 
-        fav_commercial = await sync_to_async(FavoritesCommercial.objects.filter(user=subscr_user).all)()
+        fav_commercial = await to_async(FavoritesCommercial.objects.filter(user=subscr_user).all)()
         for fav_com in fav_commercial:
             if fav_com.price and fav_com.commercial_pk.commercial_history.first():
                 if fav_com.price != fav_com.commercial_pk.commercial_history.first().current_price:
@@ -256,15 +247,15 @@ class UserRepository:
 
 
 async def get_favorites_subscr():
-    subscribers = await sync_to_async(UserSubscription.objects.filter(subscription_type='favorites', telegram_subscription=True).all)()
+    subscribers = await to_async(UserSubscription.objects.filter(subscription_type='favorites', telegram_subscription=True).all)()
     return subscribers
 
 async def remove_user_favorites_flat(obj_id: str) -> None:
-    fav = await sync_to_async(FavoritesFlats.objects.filter(pk=obj_id).first)()
+    fav = await to_async(FavoritesFlats.objects.filter(pk=obj_id).first)()
     if fav:
         await fav.adelete()
 
 async def remove_user_favorites_commercial(obj_id: str) -> None:
-    fav = await sync_to_async(FavoritesCommercial.objects.filter(pk=obj_id).first)()
+    fav = await to_async(FavoritesCommercial.objects.filter(pk=obj_id).first)()
     if fav:
         await fav.adelete()

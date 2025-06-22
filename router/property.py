@@ -158,5 +158,5 @@ async def success(call: types.CallbackQuery, state: FSMContext):
     async with App(state) as app:
         await call.message.answer(text.subscription_success)
         await app.user.save_subscription()
-        await app.clear_history(state)
+        await app.clear_history()
     await menu(call.message, state) 
