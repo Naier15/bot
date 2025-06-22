@@ -343,7 +343,10 @@ class App:
                 types.KeyboardButton(text = text.Btn.OFFICES.value),
                 types.KeyboardButton(text = text.Btn.SUBSCRIPTION.value)
             ],
-            [types.KeyboardButton(text = text.Btn.HELP.value)]
+            [
+                types.KeyboardButton(text = text.Btn.HELP.value),
+                types.KeyboardButton(text = text.Btn.AUTH.value)
+            ]
         ]
         return Markup.bottom_buttons(btns)
     

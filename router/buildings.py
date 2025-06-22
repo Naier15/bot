@@ -1,7 +1,7 @@
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
-from telegrambot.app import text, Markup, CityRepository, log
+from telegrambot.app import text, Markup, CityRepository, log, App
 
 
 router = Router()
@@ -14,7 +14,7 @@ async def flats(msg: types.Message, state: FSMContext):
     city_name = [f'<a href="{city['url']}">{city['name']}</a>' for city in cities]
     await msg.answer(
         f'{text.flats}\n{'\n'.join(city_name)}', 
-        reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
+        reply_markup = App.menu()
     )
 
 # Раздел Помещения для офиса
@@ -23,5 +23,5 @@ async def flats(msg: types.Message, state: FSMContext):
 async def offices(msg: types.Message, state: FSMContext):
     await msg.answer(
         text.offices, 
-        reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
+        reply_markup = App.menu()
     )

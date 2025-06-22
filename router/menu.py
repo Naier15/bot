@@ -5,6 +5,7 @@ from aiogram import Router, F, types
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from django.core.cache import cache
 
 from telegrambot.app import text, Markup, App, log
 
@@ -79,13 +80,22 @@ async def get_email(msg: types.Message, state: FSMContext):
         else:
             await msg.answer(text.email_tip, reply_markup = Markup.no_buttons())
 
+# Авторизация на сайте
+@router.message(F.text == text.Btn.AUTH.value)
+@log
+async def auth(msg: types.Message, state: FSMContext):
+    async with App(state) as app:
+        tg_user = await app.user.get(msg.chat.id)
+        cache.set('telegram_user', tg_user.user_profile.user, 120)
+        await msg.answer(text.auth, reply_markup = App.menu())
+
 # Раздел Помощь
 @router.message(F.text == text.Btn.HELP.value)
 @log
 async def help(msg: types.Message):
     await msg.answer(
         text.help, 
-        reply_markup = Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
+        reply_markup = App.menu()
     )
 
 # Триггер на кнопки Назад и Пропустить
