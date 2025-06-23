@@ -57,13 +57,14 @@ async def main():
             minute = int(config.DISPATCH_TIME.split(':')[1]),
             start_date = datetime.datetime.now()
         )
-        scheduler.add_job(send_favorites_obj,
-                          trigger='cron',
-                          day_of_week='0,1,2,3,4,5,6',
-                          hour=14,
-                          minute=50,
-                          start_date=datetime.datetime.now()
-                          )
+        scheduler.add_job(
+            send_favorites_obj,
+            trigger='cron',
+            day_of_week='0,1,2,3,4,5,6',
+            hour=14,
+            minute=50,
+            start_date=datetime.datetime.now()
+        )
     scheduler.start()
     
     dp = Dispatcher(storage = MemoryStorage())

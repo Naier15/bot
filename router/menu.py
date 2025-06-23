@@ -17,8 +17,8 @@ class MenuPage(StatesGroup):
     email = State()
 
 
-# Декоратор для возвращения в главное меню - использовать в обработчиках в каком-то состоянии (StatesGroup)
-def reload(coro: Coroutine):
+def reload(coro: Coroutine) -> Coroutine:
+    '''Декоратор для возвращения в главное меню - использовать в обработчиках в каком-то состоянии (StatesGroup)'''
     @wraps(coro)
     async def wrapper(msg: types.Message, state: FSMContext):
         async with App(state) as app:
@@ -28,10 +28,10 @@ def reload(coro: Coroutine):
         return await coro(msg, state)
     return wrapper
 
-# Начало 
 @router.message(CommandStart())
 @log
 async def start(msg: types.Message, state: FSMContext):
+    '''Начало'''
     async with App(state) as app:
         await app.clear_history(with_user = True)
         await msg.answer(
@@ -42,11 +42,11 @@ async def start(msg: types.Message, state: FSMContext):
         )
         await app.set_state(MenuPage.phone, state)
 
-# Регистрация пользователя
 @router.message(MenuPage.phone, F.contact | F.text)
 @log
 @reload
 async def get_contact(msg: types.Message, state: FSMContext):
+    '''Регистрация пользователя'''
     async with App(state) as app:
         if await app.user.set_phone(msg.contact.phone_number.strip().replace(' ', '').replace('-', '')):
             await app.user.set_id(msg.chat.id)
@@ -68,11 +68,11 @@ async def get_contact(msg: types.Message, state: FSMContext):
                 ])
             )
 
-# Регистрация email
 @router.message(MenuPage.email, F.text)
 @log
 @reload
 async def get_email(msg: types.Message, state: FSMContext):
+    '''Регистрация email'''
     async with App(state) as app:
         if await app.user.set_email(msg.text.strip()):
             await app.go_back(state) 
@@ -80,38 +80,38 @@ async def get_email(msg: types.Message, state: FSMContext):
         else:
             await msg.answer(text.email_tip, reply_markup = Markup.no_buttons())
 
-# Авторизация на сайте
 @router.message(F.text == text.Btn.AUTH.value)
 @log
 async def auth(msg: types.Message, state: FSMContext):
+    '''Авторизация на сайте'''
     async with App(state) as app:
         tg_user = await app.user.get(msg.chat.id)
         cache.set('telegram_user', tg_user.user_profile.user, 120)
         await msg.answer(text.auth, reply_markup = App.menu())
 
-# Раздел Помощь
 @router.message(F.text == text.Btn.HELP.value)
 @log
 async def help(msg: types.Message):
+    '''Раздел Помощь'''
     await msg.answer(
         text.help, 
         reply_markup = App.menu()
     )
 
-# Триггер на кнопки Назад и Пропустить
 @router.message(F.text.in_([text.Btn.BACK.value, text.Btn.SKIP.value]))
 @log
 async def back(msg: types.Message, state: FSMContext):
+    '''Триггер на кнопки Назад и Пропустить'''
     async with App(state) as app:
         next_page = await app.go_back(state)
         if not next_page:
             await get_menu(msg, state)
 
-# Команда меню и другие непонятные запросы
 @router.message(Command('menu'))
 @router.message(F.text)
 @log
 async def get_menu(msg: types.Message, state: FSMContext):
+    '''Команда меню и другие непонятные запросы'''
     async with App(state) as app:
         await app.clear_history()
         if not await app.user.sync(msg.chat.id):

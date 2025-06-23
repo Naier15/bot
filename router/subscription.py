@@ -16,10 +16,10 @@ class SubscriptionPage(StatesGroup):
     menu = State()
     remove = State()
 
-# Раздел Подписки - главное меню
 @router.message(F.text == text.Btn.SUBSCRIPTION.value)
 @log
 async def menu(msg: types.Message, state: FSMContext):
+    '''Раздел Подписки - главное меню'''
     async with App(state) as app:
         await app.set_state(SubscriptionPage.menu, state)
     await msg.answer(
@@ -34,10 +34,10 @@ async def menu(msg: types.Message, state: FSMContext):
         ])
     )
     
-# Список всех подписок
 @router.message(SubscriptionPage.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
 @log
 async def list(msg: types.Message, state: FSMContext):
+    '''Список всех подписок'''
     async with App(state) as app:
         subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
@@ -53,10 +53,10 @@ async def list(msg: types.Message, state: FSMContext):
             ) 
         )
 
-# Удаление подписки
 @router.message(SubscriptionPage.menu, F.text == text.Btn.REMOVE_SUBSCRIPTION.value)
 @log
 async def remove(msg: types.Message, state: FSMContext):
+    '''Удаление подписки'''
     async with App(state) as app:
         subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
@@ -71,17 +71,17 @@ async def remove(msg: types.Message, state: FSMContext):
         )
         await app.set_state(SubscriptionPage.remove, state)
 
-# Ошибка удаления подписки
 @router.message(SubscriptionPage.remove, F.text)
 @log
 @reload
 async def remove_error(msg: types.Message, state: FSMContext):
+    '''Ошибка удаления подписки'''
     await msg.answer(text.choose_property_error)
 
-# Удаление подписки и возвращение в главное меню раздела Подписки
 @router.callback_query(SubscriptionPage.remove, F.data)
 @log
 async def remove_result(call: types.CallbackQuery, state: FSMContext):
+    '''Удаление подписки и возвращение в главное меню раздела Подписки'''
     async with App(state) as app:
         if call.data == 'back':
             await app.go_back(state)
@@ -99,10 +99,10 @@ async def remove_result(call: types.CallbackQuery, state: FSMContext):
         await app.go_back(state)
         await menu(call.message, state)
 
-# Карточка подписки ЖК
 @router.callback_query(SubscriptionPage.menu)
 @log
 async def subscription_card(call: types.CallbackQuery, state: FSMContext):
+    '''Карточка подписки ЖК'''
     async with App(state) as app:
         if call.data == 'back': 
             return await menu(call.message, state)
@@ -110,11 +110,11 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
             subscription = [x for x in app.user.subscriptions if x.building_id == call.data][0]
             await subscription.send_info(call.message.chat.id)
 
-# Выбор кнопок меню
 @router.message(SubscriptionPage.menu)
 @log
 @reload
 async def choice(msg: types.Message, state: FSMContext):
+    '''Выбор кнопок меню'''
     if msg.text == text.Btn.TO_MENU.value:
         return await get_menu(msg, state)
     elif msg.text == text.Btn.NEW_SUBSCRIPTION.value:
@@ -130,8 +130,8 @@ async def choice(msg: types.Message, state: FSMContext):
             await app.set_state(ProfilePage.start, state)
         return await edit_login(msg, state)
 
-# отправка уведомлений об изменении цен в избранном
 async def send_favorites_obj():
+    '''Отправка уведомлений об изменении цен в избранном'''
     get_favorites = await get_favorites_subscr()
     for user_subscr in get_favorites:
         res_user_obj = await UserRepository().get_favorites_obj(user_subscr.user)
@@ -157,11 +157,11 @@ async def send_favorites_obj():
                     logging.error('err = ', e)
 
 
-# Удаление из избранного квартир и коммерции, добавленных в личном кабинете (Callback func при отправке уведомлений
-# об изменении цен в избранном)
 @router.callback_query(F.data.startswith('delete_'))
 @log
 async def remove_result(call: types.CallbackQuery):
+    '''Удаление из избранного квартир и коммерции, добавленных в личном кабинете 
+    (Callback func при отправке уведомлений об изменении цен в избранном)'''
     obj_id = call.data.split('_')[-1]
     if call.data.startswith('delete_flat'):
         await remove_user_favorites_flat(obj_id)

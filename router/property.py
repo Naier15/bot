@@ -18,10 +18,10 @@ class PropertyPage(StatesGroup):
     property = State()
     building = State()
 
-# Раздел Новая подписка - выбор города
 @router.message(F.text == text.Btn.NEW_SUBSCRIPTION.value)
 @log
 async def start(msg: types.Message, state: FSMContext):
+    '''Раздел Новая подписка - выбор города'''
     async with App(state) as app:
         await app.user.new_subscription()
         cities = await CityRepository().get()
@@ -35,10 +35,10 @@ async def start(msg: types.Message, state: FSMContext):
         )
         await app.set_state(PropertyPage.city, state)
 
-# Кнопки навигации - влево, вправо, в меню, назад 
 @router.callback_query(F.data.in_(['next', 'prev', 'page', 'menu', 'back']))
 @log
 async def navigation(call: types.CallbackQuery, state: FSMContext):
+    '''Кнопки навигации - влево, вправо, в меню, назад '''
     buttons = None
     if call.data == 'menu':
         await menu(call.message, state)
@@ -65,17 +65,17 @@ async def navigation(call: types.CallbackQuery, state: FSMContext):
     if buttons:
         await call.message.edit_reply_markup(reply_markup = buttons)
 
-# Ошибка выбора города
 @router.message(PropertyPage.city, F.text)
 @log
 @reload
 async def city_error(msg: types.Message, state: FSMContext):
+    '''Ошибка выбора города'''
     await msg.answer(text.choose_city_error)
 
-# Сохранение города и выбор ЖК
 @router.callback_query(PropertyPage.city, F.data)
 @log
 async def city(call: types.CallbackQuery, state: FSMContext):
+    '''Сохранение города и выбор ЖК'''
     async with App(state) as app:
         city_id = app.user.added_subscription.city_id if call.data == 'back' else call.data
         if not await app.user.added_subscription.set(city_id = city_id):
@@ -97,11 +97,11 @@ async def city(call: types.CallbackQuery, state: FSMContext):
         )
         await app.set_state(PropertyPage.property, state)
 
-# Ошибка выбора ЖК
 @router.message(PropertyPage.property, F.text)
 @log
 @reload
 async def property_error(msg: types.Message, state: FSMContext): 
+    '''Ошибка выбора ЖК'''
     async with App(state) as app:
         properties = await PropertyRepository().get(app.user.added_subscription.city_id)
         results = fuzzywuzzy.process.extract(msg.text, properties, limit = 6)
@@ -114,10 +114,10 @@ async def property_error(msg: types.Message, state: FSMContext):
             reply_markup = buttons
         )
 
-# Сохранение ЖК и выбор дома (если домов в ЖК более одного)
 @router.callback_query(PropertyPage.property, F.data)
 @log
 async def property(call: types.CallbackQuery, state: FSMContext):
+    '''Сохранение ЖК и выбор дома (если домов в ЖК более одного)'''
     async with App(state) as app:
         if not await app.user.added_subscription.set(property_id = call.data):
             return await call.message.answer(text.choose_property_error)
@@ -137,24 +137,24 @@ async def property(call: types.CallbackQuery, state: FSMContext):
             )
             await app.set_state(PropertyPage.building, state)
 
-# Ошибка выбора дома
 @router.message(PropertyPage.building, F.text)
 @log
 @reload
 async def buidling_error(msg: types.Message, state: FSMContext):
+    '''Ошибка выбора дома'''
     await msg.answer(text.choose_house_error)
 
-# Сохранение дома
 @router.callback_query(PropertyPage.building, F.data)
 @log
 async def building(call: types.CallbackQuery, state: FSMContext):
+    '''Сохранение дома'''
     async with App(state) as app:
         if not await app.user.added_subscription.set(building_id = call.data):
             return
     await success(call, state)
 
-# Завершение подписки
 async def success(call: types.CallbackQuery, state: FSMContext):
+    '''Завершение подписки'''
     async with App(state) as app:
         await call.message.answer(text.subscription_success)
         await app.user.save_subscription()

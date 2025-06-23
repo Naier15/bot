@@ -13,8 +13,8 @@ from asgiref.sync import sync_to_async
 
 to_async = partial(sync_to_async, thread_sensitive = False)
 
-# Помощник создания markup и inline кнопок
 class Markup:
+    '''Помощник создания markup и inline кнопок'''
     __btns: Optional[types.ReplyKeyboardMarkup | types.InlineKeyboardMarkup] = None
 
     @staticmethod
@@ -49,8 +49,8 @@ class Markup:
     def no_buttons() -> types.ReplyKeyboardRemove:
         return types.ReplyKeyboardRemove()
     
-# Помощник создания inline редактора для выбора города, жк и дома
 class PageBuilder:
+    '''Помощник создания inline редактора для выбора города, жк и дома'''
     current_page: int = 1
     quantity: int = 0
     items_per_page: int = 8
@@ -102,20 +102,20 @@ class PageBuilder:
          
         return Markup.inline_buttons(buttons)
     
-# Подключение к Django
 def connect_django(path_to_django: str):
+    '''Подключение к Django'''
     sys.path.append(path_to_django)
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
     if not django.conf.settings.configured:
         django.setup()
-        print(f'--- Connected to Django models - {django.conf.settings.configured} ---')
+        logging.debug(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
-# Декоратор для логгирования
-def log(coro: Coroutine):
+def log(coro: Coroutine) -> Coroutine:
+    '''Декоратор для логгирования'''
     @wraps(coro)
     async def wrapper(*args, **kwargs):
-        print(os.path.abspath(inspect.getfile(coro)), coro.__name__)
         logger = logging.getLogger(os.path.abspath(inspect.getfile(coro)))
+        logger.debug(os.path.abspath(inspect.getfile(coro)), coro.__name__)
         try:
             result = await coro(*args, **kwargs)
         except Exception as ex:
@@ -125,8 +125,8 @@ def log(coro: Coroutine):
             return result
     return wrapper
 
-# Декоратор для отображения времени отработки функции
-def time(coro: Coroutine):
+def time(coro: Coroutine) -> Coroutine:
+    '''Декоратор для отображения времени отработки функции'''
     @wraps(coro)
     async def wrapper(*args, **kwargs):
         start = perf_counter()

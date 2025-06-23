@@ -17,9 +17,9 @@ from telegrambot.models import TgUser
 
 config = Config()
 
-# Подписка
 @dataclass
 class Subscription:
+    '''Подписка'''
     def __init__(self,
         city_id: Optional[str] = None, 
         property_id: Optional[str] = None, 
@@ -48,12 +48,12 @@ class Subscription:
     def __repr__(self) -> str:
         return f'\nSubscription(\n\tname = {self.property_name}, \n\thouse_number = {self.house_num}\n\tcity = {self.city_id}, \n\tproperty = {self.property_id}, \n\tbuilding = {self.building_id}\n)\n'
         
-    # Добавление информации
     async def set(self, 
         city_id: Optional[str] = None, 
         property_id: Optional[str] = None, 
         building_id: Optional[str] = None
     ) -> bool:
+        '''Добавление информации'''
         if city_id and len(city_id) > 0:
             self.city_id = city_id
             return True
@@ -65,17 +65,17 @@ class Subscription:
             return True
         return False
     
-    # Сохранение подписки
     async def save(self, chat_id: str, user_repository: UserRepository) -> None:
+        '''Сохранение подписки'''
         await self.sync()
         await user_repository.save_subscription(chat_id, self.building_id)
 
-    # Удаление подписки
     async def remove(self, chat_id: str, user_repository: UserRepository) -> None:
+        '''Удаление подписки'''
         await user_repository.remove_subscription(chat_id, self.building_id)
 
-    # Подтягивание всех данных из базы данных
     async def sync(self) -> bool:
+        '''Подтягивание всех данных из базы данных'''
         if not self.building_id:
             return False
         data = await self.subscription_repository.get(self.building_id)
@@ -89,8 +89,8 @@ class Subscription:
         self.date_info = data['date_info']
         return True
     
-    # Формирование и отправка сообщения ежедневной подписки
     async def send_info(self, user: TgUser, is_dispatch: bool = False) -> None:
+        '''Формирование и отправка сообщения ежедневной подписки'''
         await self.sync()
 
         photo_ids = [id for id, _, _ in self.photos]
@@ -141,8 +141,8 @@ class Subscription:
                 except Exception as ex:
                     logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
 
-# Пользователь
 class User:
+    '''Пользователь'''
     def __init__(self, user_repository: UserRepository) -> Self:
         self.user_repository = user_repository
         self.id: Optional[int] = None
@@ -156,8 +156,8 @@ class User:
         self.subscriptions: list[Subscription] = []
         self.added_subscription: Optional[Subscription] = None
 
-    # Формирование сообщения в профиле
     def get_data(self) -> str:
+        '''Формирование сообщения в профиле'''
         return (
             f'- ЛОГИН 😉 <b><code>{self.login}</code></b>\n'
             f'- ТЕЛЕФОН 📞 <b><code>{self.phone}</code></b>\n'
@@ -165,13 +165,13 @@ class User:
             '\n<i>🔹 Нажмите на логин, телефон или email, чтобы их скопировать</i>'
         )
     
-    # Добавление id
     async def set_id(self, id: int) -> bool:
+        '''Добавление id'''
         self.id = id
         return True
      
-    # Добавление и валидация номера телефона
     async def set_phone(self, phone: str) -> bool:
+        '''Добавление и валидация номера телефона'''
         try:
             if len(phone) == 11 and phone.startswith('7'):
                 phone = f'8{phone[1:]}'
@@ -186,24 +186,24 @@ class User:
         except Exception as ex:
             return False
 
-    # Добавление логина
     async def set_login(self, login: str) -> bool:
+        '''Добавление логина'''
         if len(login) > 5 and len(login) < 16 and re.match(r'^[a-zA-Z0-9_]*$', login):
             self.login = login
             return True
         else:
             return False
         
-    # Добавление и валидация пароля
     async def set_password(self, password: str) -> bool:
+        '''Добавление и валидация пароля'''
         if len(password) > 7:
             self.password = password
             return True
         else:
             return False
         
-    # Добавление и валидация email
     async def set_email(self, email: str) -> bool:
+        '''Добавление и валидация email'''
         if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
             self.email = email
             success = await self.user_repository.set_email(self.id, self.email)
@@ -213,13 +213,13 @@ class User:
         else:    
             return False
         
-    # Проверка существования пользователя
     async def is_exist(self) -> bool:
+        '''Проверка существования пользователя'''
         user = await self.user_repository.get_user(chat_id = self.id)
         return True if user else False
         
-    # Сохранение пользователя
     async def save(self) -> bool:
+        '''Сохранение пользователя'''
         result = await self.user_repository.create_user(self.id, self.login, self.phone, self.email)
         if result:
             self.is_registed = True
@@ -227,16 +227,16 @@ class User:
         else:
             return False
         
-    # Получение пользователя
     async def get(self, chat_id: Optional[int] = None) -> TgUser:
+        '''Получение пользователя'''
         if not self.id:
             if chat_id is None:
                 raise Exception('User.get() User should be synced or required chat_id parameter')
             self.id = chat_id
         return await self.user_repository.get_user(chat_id = self.id) 
     
-    # Подтягивание данных пользователя
     async def sync(self, chat_id: int) -> bool:
+        '''Подтягивание данных пользователя'''
         if self.is_sync:
             return True
         
@@ -260,13 +260,13 @@ class User:
         self.is_sync = True
         return True
     
-    # Создание новой пустой подписки
     async def new_subscription(self) -> Subscription:
+        '''Создание новой пустой подписки'''
         self.added_subscription = Subscription()
         return self.added_subscription
 
-    # Добавление текущей подписки в список подписок пользователя
     async def save_subscription(self) -> None:
+        '''Добавление текущей подписки в список подписок пользователя'''
         found_subscription = [
             True for sub in self.subscriptions 
             if sub.building_id == self.added_subscription.building_id
@@ -276,16 +276,16 @@ class User:
             self.subscriptions += [self.added_subscription]
         self.added_subscription = None
 
-    # Формирование подписок как inline кнопок
     async def form_subscriptions_as_buttons(self) -> list:
+        '''Формирование подписок как inline кнопок'''
         return [
             [types.InlineKeyboardButton(text = f'{sub.property_name}, дом {sub.house_num}', callback_data = sub.building_id)]
             for sub in self.subscriptions
         ]
     
 
-# Логика приложения
 class App:
+    '''Логика приложения'''
     bot: Bot = None
 
     def __init__(self, state: Optional[FSMContext] = None) -> Self:
@@ -310,9 +310,9 @@ class App:
     async def __aexit__(self, exc_type, exc, tb) -> None:
         await self.state.update_data(app = self.instance)
 
-    # Кнопки главного меню
     @staticmethod
     def menu() -> types.ReplyKeyboardMarkup:
+        '''Кнопки главного меню'''
         btns = [
             [
                 types.KeyboardButton(text = text.Btn.FLATS.value),
@@ -329,23 +329,23 @@ class App:
         ]
         return Markup.bottom_buttons(btns)
     
-    # Отчистка истории страниц
     async def clear_history(self, with_user: bool = False):
+        '''Отчистка истории страниц'''
         if with_user:
             self.user = User(UserRepository())
         self.history.clear()
         await self.state.clear()
 
-    # Добавление нового состояния в историю
     async def set_state(self, page: State, state: FSMContext) -> None:
+        '''Добавление нового состояния в историю'''
         if len(self.history) > 0 and self.history[-1] == page:
             return
         self.history.append(page)
         await state.set_state(page)
         # print(f'--History {self.history}--')
 
-    # Откат последнего состояния и возвращение предыдущего
     async def go_back(self, state: FSMContext) -> State:
+        '''Откат последнего состояния и возвращение предыдущего'''
         if len(self.history) > 0:
             self.history.pop()  # Шаг назад
 
@@ -356,9 +356,9 @@ class App:
             self.history.pop() # Удаляем и предыдущего состояние, поскольку оно добавится в следующем обработчике
         return page
     
-    # Рассылка клиентам
     @log
     async def dispatch_to_clients(self) -> None:
+        '''Рассылка клиентам'''
         logging.info(f'{datetime.datetime.now()} DISPATCHING')
         user_repository = UserRepository()
         chats = await user_repository.get_dispatch_list()

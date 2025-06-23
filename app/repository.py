@@ -19,8 +19,8 @@ from django.db import transaction
 # Слой доступа к данным для взаимодействия с базой данными
 
 class CityRepository:
-    # Получение городов
     async def get(self) -> list[dict]:
+        '''Получение городов'''
         cities = []
         async for x in City.objects.filter(event = False) \
                 .values('id', 'city_name', 'city_slug') \
@@ -33,8 +33,8 @@ class CityRepository:
         return cities
     
 class PropertyRepository:
-    # Получение ЖК по городу
     async def get(self, city_id: str) -> list:
+        '''Получение ЖК по городу'''
         properties = []
         async for x in Property.objects.filter(city_id = int(city_id)) \
                 .values('id', 'name') \
@@ -44,8 +44,8 @@ class PropertyRepository:
         return properties
     
 class BuildingRepository:
-    # Получение зданий по ЖК
     async def get(self, property_id: str) -> list:
+        '''Получение зданий по ЖК'''
         buildings = []
         async for x in Buildings.objects.filter(fk_property = int(property_id)) \
                 .values('id', 'num_dom') \
@@ -57,8 +57,8 @@ class BuildingRepository:
         return buildings
     
 class SubscriptionRepository:
-    # Данные по подписке на здание
     async def get(self, building_id: str) -> dict:
+        '''Данные по подписке на здание'''
         building = await to_async(
             Buildings.objects.select_related('fk_property', 'fk_property__city') \
             .filter(id = int(building_id))\
@@ -122,15 +122,15 @@ class SubscriptionRepository:
         }
     
 class PhotoRepository:
-    # Отметить, что фото было уже просмотрено в ежедневной рассылке
     async def make_photo_seen(self, user: TgUser, building_id: int, photo_id: int) -> None:
+        '''Отметить, что фото было уже просмотрено в ежедневной рассылке'''
         building = await Buildings.objects.aget(id = building_id)
         photo = await BuildingPhotos.objects.aget(id = photo_id)
         seen_photo = await SeenPhoto.objects.acreate(photo = photo, building = building)
         await user.seen_photos.aadd(seen_photo)
 
-    # Отфильтровать еще не просмотренные фото
     async def filter_unseen_photos(self, user: TgUser, building_id: str, photos: list[int]) -> list[str]:
+        '''Отфильтровать еще не просмотренные фото'''
         seen_photos = user.seen_photos.filter(Q(building__id = building_id) & Q(photo__id__in = photos))
         for photo in seen_photos:
             while photo.photo.id in photos:
@@ -139,8 +139,8 @@ class PhotoRepository:
     
 class UserRepository:
 
-    # Создать пользователя
     async def create_user(self, chat_id: str, login: str, phone_number: str, email: Optional[str] = None) -> bool:
+        '''Создать пользователя'''
         with transaction.atomic():
             alphabet = string.ascii_letters + string.digits
             password = ''.join(secrets.choice(alphabet) for _ in range(16))
@@ -161,16 +161,16 @@ class UserRepository:
             return True
         return False
 
-    # Добавление email
     async def set_email(self, chat_id: str, email: str) -> bool:
+        '''Добавление email'''
         user = await self.get_user(chat_id = chat_id)
         if not user:
             return False
         await DjUser.objects.filter(id = user.user_profile.user.id).aupdate(email = email)
         return True
     
-    # Получение пользователя
     async def get_user(self, chat_id: Optional[str] = None, name: Optional[str] = None) -> Optional[TgUser]:
+        '''Получение пользователя'''
         if (chat_id is not None and name is not None) or (chat_id is None and name is None):
             raise Exception('UserRepository.get_user() requires one parameter at least')
         try:
@@ -183,8 +183,8 @@ class UserRepository:
         except TgUser.DoesNotExist:
             return None
 
-    # Сохранить подписку пользователя
     async def save_subscription(self, chat_id: str, building_id: str) -> None:
+        '''Сохранить подписку пользователя'''
         tg_user = await self.get_user(chat_id = chat_id)
         if not tg_user:
             return
@@ -194,8 +194,8 @@ class UserRepository:
         await tg_user.building.aadd(building)
         await tg_user.asave()
 
-    # Удалить подписку у пользователя
     async def remove_subscription(self, chat_id: str, building_id: str) -> None:
+        '''Удалить подписку у пользователя'''
         tg_user = await self.get_user(chat_id = chat_id)
         if not tg_user:
             return
@@ -205,12 +205,12 @@ class UserRepository:
         await tg_user.building.aremove(building)
         await tg_user.asave()
         
-    # Получить список пользователей для ежедневной рассылки новостей
     async def get_dispatch_list(self) -> list[int]:
+        '''Получить список пользователей для ежедневной рассылки новостей'''
         return await to_async(TgUser.objects.values_list)('chat_id', flat = True)
 
-    # Избранное квартир и коммерции в ЛК
     async def get_favorites_obj(self, subscr_user) -> list[str]:
+        '''Избранное квартир и коммерции в ЛК'''
         fav_flats = await to_async(FavoritesFlats.objects.filter(user=subscr_user).all)()
         text_list = []
         for fav_flat in fav_flats:

@@ -6,10 +6,10 @@ from telegrambot.app import text, Markup, App, log
 
 router = Router()
     
-# Раздел Профиль - Главное меню
 @router.message(F.text == text.Btn.PROFILE.value)
 @log
-async def main(msg: types.Message, state: FSMContext):   
+async def main(msg: types.Message, state: FSMContext): 
+    '''Раздел Профиль'''  
     async with App(state) as app:
         await app.user.sync(msg.chat.id)
         await msg.answer(

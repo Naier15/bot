@@ -6,10 +6,10 @@ from telegrambot.app import text, Markup, CityRepository, log, App
 
 router = Router()
 
-# Раздел Каталог квартир
 @router.message(F.text == text.Btn.FLATS.value)
 @log
 async def flats(msg: types.Message, state: FSMContext):
+    '''Раздел Каталог квартир'''
     cities = await CityRepository().get()
     city_name = [f'<a href="{city['url']}">{city['name']}</a>' for city in cities]
     await msg.answer(
@@ -17,10 +17,10 @@ async def flats(msg: types.Message, state: FSMContext):
         reply_markup = App.menu()
     )
 
-# Раздел Помещения для офиса
 @router.message(F.text == text.Btn.OFFICES.value)
 @log
 async def offices(msg: types.Message, state: FSMContext):
+    '''Раздел Помещения для офиса'''
     await msg.answer(
         text.offices, 
         reply_markup = App.menu()
