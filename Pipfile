@@ -20,6 +20,7 @@ django-yaturbo = "*"
 fuzzywuzzy = {extras = ["speedup"], version = "*"}
 psycopg2-binary = "*"
 aiofiles = "*"
+django-telegram-login = "*"
 
 [dev-packages]
 
