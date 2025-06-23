@@ -1,4 +1,4 @@
-import asyncio, datetime, logging, os
+import asyncio, datetime, logging, os, sys
 from aiogram import Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -15,12 +15,22 @@ from router import send_favorites_obj
 
 config = Config()
 
-logging.basicConfig(
-    filename = os.path.abspath(os.path.join(os.path.dirname(__file__), config.LOG_FILE)),
-    level = logging.DEBUG, 
-    format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    encoding = 'utf-8'
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+# Логи в файл
+file_handler = logging.FileHandler(
+    filename=os.path.abspath(os.path.join(os.path.dirname(__file__), config.LOG_FILE)),
+    encoding='utf-8'
 )
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# Логи в консоль
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 @log
 async def main():
