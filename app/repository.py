@@ -169,7 +169,7 @@ class UserRepository:
         await DjUser.objects.filter(id = user.user_profile.user.id).aupdate(email = email)
         return True
     
-    async def get_user(self, chat_id: Optional[str] = None, name: Optional[str] = None) -> Optional[TgUser]:
+    async def get_user(self, chat_id: Optional[int] = None, name: Optional[str] = None) -> Optional[TgUser]:
         '''Получение пользователя'''
         if (chat_id is not None and name is not None) or (chat_id is None and name is None):
             raise Exception('UserRepository.get_user() requires one parameter at least')
@@ -194,7 +194,7 @@ class UserRepository:
         await tg_user.building.aadd(building)
         await tg_user.asave()
 
-    async def remove_subscription(self, chat_id: str, building_id: str) -> None:
+    async def remove_subscription(self, chat_id: int, building_id: str) -> None:
         '''Удалить подписку у пользователя'''
         tg_user = await self.get_user(chat_id = chat_id)
         if not tg_user:

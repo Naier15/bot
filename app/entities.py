@@ -70,7 +70,7 @@ class Subscription:
         await self.sync()
         await user_repository.save_subscription(chat_id, self.building_id)
 
-    async def remove(self, chat_id: str, user_repository: UserRepository) -> None:
+    async def remove(self, chat_id: int, user_repository: UserRepository) -> None:
         '''Удаление подписки'''
         await user_repository.remove_subscription(chat_id, self.building_id)
 
@@ -275,6 +275,10 @@ class User:
             await self.added_subscription.save(self.id, self.user_repository)
             self.subscriptions += [self.added_subscription]
         self.added_subscription = None
+
+    async def remove_subscription(self, subscription: Subscription) -> None:
+        '''Удаление текущей подписки из списка подписок пользователя'''
+        await subscription.remove(self.id, self.user_repository)
 
     async def form_subscriptions_as_buttons(self) -> list:
         '''Формирование подписок как inline кнопок'''

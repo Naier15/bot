@@ -119,7 +119,7 @@ def log(coro: Coroutine) -> Coroutine:
         try:
             return await coro(*args, **kwargs)
         except Exception as ex:
-            logger.error(f'{coro.__name__} - {ex}')
+            logger.error(f'{coro.__name__} - {ex}', exc_info=True)
     return wrapper
 
 def time(coro: Coroutine) -> Coroutine:

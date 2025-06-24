@@ -89,7 +89,7 @@ async def remove_result(call: types.CallbackQuery, state: FSMContext):
         
         for sub in app.user.subscriptions:
             if sub.building_id == call.data:
-                await sub.remove(app.user.id)
+                await app.user.remove_subscription(sub)
                 app.user.subscriptions.remove(sub)
                 break
         else:
@@ -108,7 +108,8 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
             return await menu(call.message, state)
         else:
             subscription = [x for x in app.user.subscriptions if x.building_id == call.data][0]
-            await subscription.send_info(call.message.chat.id)
+            tg_user = await app.user.get()
+            await subscription.send_info(tg_user)
 
 @router.message(SubscriptionPage.menu)
 @reload
