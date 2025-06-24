@@ -1,7 +1,7 @@
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
-from telegrambot.app import text, Markup, CityRepository, log, App
+from telegrambot.app import text, CityRepository, log, App
 
 
 router = Router()

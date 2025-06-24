@@ -115,13 +115,11 @@ def log(coro: Coroutine) -> Coroutine:
     @wraps(coro)
     async def wrapper(*args, **kwargs):
         logger = logging.getLogger(os.path.abspath(inspect.getfile(coro)))
+        logger.debug(coro.__name__)
         try:
-            result = await coro(*args, **kwargs)
+            return await coro(*args, **kwargs)
         except Exception as ex:
             logger.error(f'{coro.__name__} - {ex}')
-        else:
-            logger.debug(coro.__name__)
-            return result
     return wrapper
 
 def time(coro: Coroutine) -> Coroutine:

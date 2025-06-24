@@ -18,7 +18,7 @@ class MenuPage(StatesGroup):
 
 
 def reload(coro: Coroutine) -> Coroutine:
-    '''Декоратор для возвращения в главное меню - использовать в обработчиках в каком-то состоянии (StatesGroup)'''
+    '''Декоратор для возвращения в главное меню - использовать для обработчиков в каком-то состоянии (StatesGroup)'''
     @wraps(coro)
     async def wrapper(msg: types.Message, state: FSMContext):
         async with App(state) as app:
@@ -43,8 +43,8 @@ async def start(msg: types.Message, state: FSMContext):
         await app.set_state(MenuPage.phone, state)
 
 @router.message(MenuPage.phone, F.contact | F.text)
-@log
 @reload
+@log
 async def get_contact(msg: types.Message, state: FSMContext):
     '''Регистрация пользователя'''
     async with App(state) as app:
@@ -69,8 +69,8 @@ async def get_contact(msg: types.Message, state: FSMContext):
             )
 
 @router.message(MenuPage.email, F.text)
-@log
 @reload
+@log
 async def get_email(msg: types.Message, state: FSMContext):
     '''Регистрация email'''
     async with App(state) as app:

@@ -72,8 +72,8 @@ async def remove(msg: types.Message, state: FSMContext):
         await app.set_state(SubscriptionPage.remove, state)
 
 @router.message(SubscriptionPage.remove, F.text)
-@log
 @reload
+@log
 async def remove_error(msg: types.Message, state: FSMContext):
     '''Ошибка удаления подписки'''
     await msg.answer(text.choose_property_error)
@@ -111,8 +111,8 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
             await subscription.send_info(call.message.chat.id)
 
 @router.message(SubscriptionPage.menu)
-@log
 @reload
+@log
 async def choice(msg: types.Message, state: FSMContext):
     '''Выбор кнопок меню'''
     if msg.text == text.Btn.TO_MENU.value:
@@ -122,13 +122,6 @@ async def choice(msg: types.Message, state: FSMContext):
         return await start(msg, state)
     elif msg.text == text.Btn.BACK.value:
         return await menu(msg, state)
-    elif msg.text == text.Btn.EDIT.value:
-        from .profile import ProfilePage, edit_login
-        
-        async with App(state) as app:
-            await app.go_back(state)
-            await app.set_state(ProfilePage.start, state)
-        return await edit_login(msg, state)
 
 async def send_favorites_obj():
     '''Отправка уведомлений об изменении цен в избранном'''

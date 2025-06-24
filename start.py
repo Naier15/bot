@@ -15,9 +15,12 @@ from router import send_favorites_obj
 
 config = Config()
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s -- %(name)s -- %(levelname)s -- %(message)s')
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
+
+for handler in logger.handlers:
+    logger.removeHandler(handler)
 
 # Логи в файл
 file_handler = logging.FileHandler(
@@ -28,9 +31,9 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 # Логи в консоль
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
+console = logging.StreamHandler(sys.stdout)
+console.setFormatter(formatter)
+logger.addHandler(console)
 
 @log
 async def main():
@@ -41,13 +44,14 @@ async def main():
         await app.bot.set_my_commands(commands, types.BotCommandScopeDefault())
     scheduler = AsyncIOScheduler(timezone = config.REGION)
     if config.DEBUG:
-        scheduler.add_job(
-            app.dispatch_to_clients, 
-            trigger = 'cron', 
-            day_of_week = '0,1,2,3,4,5,6',
-            minute = '*',
-            start_date = datetime.datetime.now()
-        )
+        # scheduler.add_job(
+        #     app.dispatch_to_clients, 
+        #     trigger = 'cron', 
+        #     day_of_week = '0,1,2,3,4,5,6',
+        #     minute = '*',
+        #     start_date = datetime.datetime.now()
+        # )
+        pass
     else:
         scheduler.add_job(
             app.dispatch_to_clients, 

@@ -66,8 +66,8 @@ async def navigation(call: types.CallbackQuery, state: FSMContext):
         await call.message.edit_reply_markup(reply_markup = buttons)
 
 @router.message(PropertyPage.city, F.text)
-@log
 @reload
+@log
 async def city_error(msg: types.Message, state: FSMContext):
     '''Ошибка выбора города'''
     await msg.answer(text.choose_city_error)
@@ -98,8 +98,8 @@ async def city(call: types.CallbackQuery, state: FSMContext):
         await app.set_state(PropertyPage.property, state)
 
 @router.message(PropertyPage.property, F.text)
-@log
 @reload
+@log
 async def property_error(msg: types.Message, state: FSMContext): 
     '''Ошибка выбора ЖК'''
     async with App(state) as app:
@@ -138,8 +138,8 @@ async def property(call: types.CallbackQuery, state: FSMContext):
             await app.set_state(PropertyPage.building, state)
 
 @router.message(PropertyPage.building, F.text)
-@log
 @reload
+@log
 async def buidling_error(msg: types.Message, state: FSMContext):
     '''Ошибка выбора дома'''
     await msg.answer(text.choose_house_error)
