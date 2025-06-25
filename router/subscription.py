@@ -4,7 +4,7 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from .menu import get_menu, reload
+from .menu import get_menu, reload, require_auth
 from telegrambot.app import text, Markup, App, log, UserRepository, \
     get_favorites_subscr, remove_user_favorites_flat, remove_user_favorites_commercial
 from telegrambot.models import TgUser
@@ -17,6 +17,7 @@ class SubscriptionPage(StatesGroup):
     remove = State()
 
 @router.message(F.text == text.Btn.SUBSCRIPTION.value)
+@require_auth
 @log
 async def menu(msg: types.Message, state: FSMContext):
     '''Раздел Подписки - главное меню'''
@@ -35,6 +36,7 @@ async def menu(msg: types.Message, state: FSMContext):
     )
     
 @router.message(SubscriptionPage.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
+@require_auth
 @log
 async def list(msg: types.Message, state: FSMContext):
     '''Список всех подписок'''
@@ -54,6 +56,7 @@ async def list(msg: types.Message, state: FSMContext):
         )
 
 @router.message(SubscriptionPage.menu, F.text == text.Btn.REMOVE_SUBSCRIPTION.value)
+@require_auth
 @log
 async def remove(msg: types.Message, state: FSMContext):
     '''Удаление подписки'''
@@ -100,6 +103,7 @@ async def remove_result(call: types.CallbackQuery, state: FSMContext):
         await menu(call.message, state)
 
 @router.callback_query(SubscriptionPage.menu)
+@require_auth
 @log
 async def subscription_card(call: types.CallbackQuery, state: FSMContext):
     '''Карточка подписки ЖК'''

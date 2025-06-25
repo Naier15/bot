@@ -28,6 +28,18 @@ def reload(coro: Coroutine) -> Coroutine:
         return await coro(msg, state)
     return wrapper
 
+def require_auth(coro: Coroutine) -> Coroutine:
+    '''Декоратор для автоматической авторизации или переходу к регистрации'''
+    @wraps(coro)
+    async def wrapper(msg: types.Message, state: FSMContext):
+        async with App(state) as app:
+            if not app.user.is_sync:
+                await app.clear_history()
+                if not await app.user.sync(msg.chat.id):
+                    return await start(msg, state)
+        return await coro(msg, state)
+    return wrapper
+
 @router.message(CommandStart())
 @log
 async def start(msg: types.Message, state: FSMContext):
@@ -81,17 +93,25 @@ async def get_email(msg: types.Message, state: FSMContext):
             await msg.answer(text.email_tip, reply_markup = Markup.no_buttons())
 
 @router.message(F.text == text.Btn.AUTH.value)
+@require_auth
 @log
 async def auth(msg: types.Message, state: FSMContext):
     '''Авторизация на сайте'''
     async with App(state) as app:
         tg_user = await app.user.get(msg.chat.id)
         cache.set('telegram_user', tg_user.user_profile.user, 120)
-        await msg.answer(text.auth, reply_markup = App.menu())
+        await msg.answer(
+            text.auth, 
+            reply_markup = Markup.inline_buttons([ 
+                [types.InlineKeyboardButton(text = text.auth_btn, url = 'https://bashni.pro')],
+                [types.InlineKeyboardButton(text = text.Btn.MENU, callback_data = 'to_menu')]
+            ])
+        )
 
 @router.message(F.text == text.Btn.HELP.value)
+@require_auth
 @log
-async def help(msg: types.Message):
+async def help(msg: types.Message, state: FSMContext):
     '''Раздел Помощь'''
     await msg.answer(
         text.help, 
@@ -109,18 +129,21 @@ async def back(msg: types.Message, state: FSMContext):
 
 @router.message(Command('menu'))
 @router.message(F.text)
+@require_auth
 @log
 async def get_menu(msg: types.Message, state: FSMContext):
     '''Команда меню и другие непонятные запросы'''
     async with App(state) as app:
-        await app.clear_history()
-        if not await app.user.sync(msg.chat.id):
-            return await start(msg, state)
-    if not app.user.email:
-        await msg.answer(text.choose_email, reply_markup = Markup.no_buttons())
-        await app.set_state(MenuPage.email, state)
-        return
+        if not app.user.email:
+            await msg.answer(text.choose_email, reply_markup = Markup.no_buttons())
+            await app.set_state(MenuPage.email, state)
+            return
     await msg.answer(
         text.Btn.MENU.value, 
         reply_markup = App.menu()
     )
+
+@router.callback_query(F.data == 'to_menu')
+async def get_menu_callback(call: types.CallbackQuery, state: FSMContext):
+    '''Прокси в get_menu для Inline кнопок'''
+    await get_menu(call.message, state) 

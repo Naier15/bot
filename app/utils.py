@@ -128,7 +128,7 @@ def time(coro: Coroutine) -> Coroutine:
     async def wrapper(*args, **kwargs):
         start = perf_counter()
         result = await coro(*args, **kwargs)
-        print(f'[{coro.__name__}] takes {perf_counter() - start} seconds')
+        logging.info(f'[{coro.__name__}] takes {perf_counter() - start} seconds')
         return result
     return wrapper
 

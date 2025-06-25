@@ -7,7 +7,7 @@ import fuzzywuzzy.process
 
 from telegrambot.app import text, PageBuilder, App, log, \
     CityRepository, PropertyRepository, BuildingRepository
-from .menu import reload
+from .menu import reload, require_auth
 from .subscription import menu, SubscriptionPage
 
 
@@ -19,6 +19,7 @@ class PropertyPage(StatesGroup):
     building = State()
 
 @router.message(F.text == text.Btn.NEW_SUBSCRIPTION.value)
+@require_auth
 @log
 async def start(msg: types.Message, state: FSMContext):
     '''Раздел Новая подписка - выбор города'''

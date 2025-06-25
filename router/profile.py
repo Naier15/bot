@@ -2,11 +2,13 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
 from telegrambot.app import text, Markup, App, log
+from .menu import require_auth
 
 
 router = Router()
     
 @router.message(F.text == text.Btn.PROFILE.value)
+@require_auth
 @log
 async def main(msg: types.Message, state: FSMContext): 
     '''Раздел Профиль'''  

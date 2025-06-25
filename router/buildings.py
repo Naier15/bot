@@ -2,11 +2,13 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
 from telegrambot.app import text, CityRepository, log, App
+from .menu import require_auth
 
 
 router = Router()
 
 @router.message(F.text == text.Btn.FLATS.value)
+@require_auth
 @log
 async def flats(msg: types.Message, state: FSMContext):
     '''Раздел Каталог квартир'''
@@ -18,6 +20,7 @@ async def flats(msg: types.Message, state: FSMContext):
     )
 
 @router.message(F.text == text.Btn.OFFICES.value)
+@require_auth
 @log
 async def offices(msg: types.Message, state: FSMContext):
     '''Раздел Помещения для офиса'''
