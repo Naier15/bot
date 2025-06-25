@@ -103,10 +103,10 @@ async def auth(msg: types.Message, state: FSMContext):
         await msg.answer(
             text.auth, 
             reply_markup = Markup.inline_buttons([ 
-                [types.InlineKeyboardButton(text = text.auth_btn, url = 'https://bashni.pro')],
-                [types.InlineKeyboardButton(text = text.Btn.MENU, callback_data = 'to_menu')]
+                [types.InlineKeyboardButton(text = text.auth_btn, url = 'https://bashni.pro')]
             ])
         )
+        await get_menu(msg, state)
 
 @router.message(F.text == text.Btn.HELP.value)
 @require_auth
