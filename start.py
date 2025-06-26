@@ -1,42 +1,24 @@
-import asyncio, datetime, logging, os, sys
+import asyncio, datetime
 from aiogram import Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from config import Config
+from config import Config, connect_django, init_log
+config = Config()
+init_log(config.LOG_FILE)
+connect_django(config.DJANGO_PATH)
+
 from app import App, log
 from router import menu_router # Страница главного меню и раздел помощь
 from router import buildings_router # Разделы квартир и офисов
-from router import profile_router # Раздел профиля, его создания и редактирования
 from router import subscription_router # Раздел подписок - просмотр, удаление
 from router import property_router # Раздел добавления новой подписки
 from router import send_favorites_obj
 
 
-config = Config()
-
-formatter = logging.Formatter('%(asctime)s -- %(name)s -- %(levelname)s -- %(message)s')
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-for handler in logger.handlers:
-    logger.removeHandler(handler)
-
-# Логи в файл
-file_handler = logging.FileHandler(
-    filename=os.path.abspath(os.path.join(os.path.dirname(__file__), config.LOG_FILE)),
-    encoding='utf-8'
-)
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-
-# Логи в консоль
-console = logging.StreamHandler(sys.stdout)
-console.setFormatter(formatter)
-logger.addHandler(console)
-
 @log
 async def main():
+    connect_django(config.DJANGO_PATH)
     app = App()
     await app.bot.delete_webhook(drop_pending_updates = True)  
     if config.TO_SET_COMMANDS:
@@ -73,7 +55,6 @@ async def main():
     dp = Dispatcher(storage = MemoryStorage())
     [dp.include_router(router) for router in (
 		buildings_router,
-		profile_router,
 		subscription_router,
 		property_router,
 		menu_router

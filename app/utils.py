@@ -6,8 +6,8 @@ from aiogram import types
 from PIL import Image
 from io import BytesIO
 from typing import Optional, Self, Coroutine
-import logging, inspect, math, os, sys, django, aiohttp, aiofiles
-import django.conf
+import logging, inspect, math, os, aiohttp, aiofiles
+
 from asgiref.sync import sync_to_async
 
 
@@ -101,14 +101,6 @@ class PageBuilder:
         buttons += bottom_btns
          
         return Markup.inline_buttons(buttons)
-    
-def connect_django(path_to_django: str):
-    '''Подключение к Django'''
-    sys.path.append(path_to_django)
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
-    if not django.conf.settings.configured:
-        django.setup()
-        logging.debug(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
 def log(coro: Coroutine) -> Coroutine:
     '''Декоратор для логгирования'''

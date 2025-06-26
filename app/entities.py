@@ -155,15 +155,6 @@ class User:
         self.archive: list[str, str, str] = []
         self.subscriptions: list[Subscription] = []
         self.added_subscription: Optional[Subscription] = None
-
-    def get_data(self) -> str:
-        '''Формирование сообщения в профиле'''
-        return (
-            f'- ЛОГИН 😉 <b><code>{self.login}</code></b>\n'
-            f'- ТЕЛЕФОН 📞 <b><code>{self.phone}</code></b>\n'
-            f'- EMAIL 📧 <b><code>{self.email}</code></b>\n'
-            '\n<i>🔹 Нажмите на логин, телефон или email, чтобы их скопировать</i>'
-        )
     
     async def set_id(self, id: int) -> bool:
         '''Добавление id'''
@@ -320,15 +311,14 @@ class App:
         btns = [
             [
                 types.KeyboardButton(text = text.Btn.FLATS.value),
-                types.KeyboardButton(text = text.Btn.PROFILE.value)
-            ],
-            [
-                types.KeyboardButton(text = text.Btn.OFFICES.value),
                 types.KeyboardButton(text = text.Btn.SUBSCRIPTION.value)
             ],
             [
-                types.KeyboardButton(text = text.Btn.HELP.value),
+                types.KeyboardButton(text = text.Btn.OFFICES.value),
                 types.KeyboardButton(text = text.Btn.AUTH.value)
+            ],
+            [
+                types.KeyboardButton(text = text.Btn.HELP.value)
             ]
         ]
         return Markup.bottom_buttons(btns)

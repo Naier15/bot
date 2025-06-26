@@ -1,10 +1,8 @@
 from typing import Optional
 import secrets, string
 
-from .utils import connect_django, to_async, log
+from .utils import to_async, log
 from config import Config
-config = Config()
-connect_django(config.DJANGO_PATH)
 from authapp.models import UserProfile
 from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildingPhotos
 from telegrambot.models import TgUser, SeenPhoto
@@ -17,6 +15,7 @@ from django.db import transaction
 
 
 # Слой доступа к данным для взаимодействия с базой данными
+config = Config()
 
 class CityRepository:
     async def get(self) -> list[dict]:
