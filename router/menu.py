@@ -33,10 +33,9 @@ def require_auth(coro: Coroutine) -> Coroutine:
     @wraps(coro)
     async def wrapper(msg: types.Message, state: FSMContext):
         async with App(state) as app:
-            if not app.user.is_sync:
-                await app.clear_history()
-                if not await app.user.sync(msg.chat.id):
-                    return await start(msg, state)
+            await app.clear_history()
+            if not await app.user.sync(msg.chat.id):
+                return await start(msg, state)
         return await coro(msg, state)
     return wrapper
 
