@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Coroutine
+from typing import Coroutine, Callable
 
 from aiogram import Router, F, types
 from aiogram.filters import Command, CommandStart
@@ -28,15 +28,19 @@ def reload(coro: Coroutine) -> Coroutine:
         return await coro(msg, state)
     return wrapper
 
-def require_auth(coro: Coroutine) -> Coroutine:
+def require_auth(clear_history: bool = False) -> Callable:
     '''Декоратор для автоматической авторизации или переходу к регистрации'''
-    @wraps(coro)
-    async def wrapper(msg: types.Message, state: FSMContext):
-        async with App(state) as app:
-            await app.clear_history()
-            if not await app.user.sync(msg.chat.id):
-                return await start(msg, state)
-        return await coro(msg, state)
+    def wrapper(coro: Coroutine):
+        @wraps(coro)
+        async def inner(msg: types.Message, state: FSMContext):
+            nonlocal clear_history
+            async with App(state) as app:
+                if clear_history:
+                    await app.clear_history()
+                if not await app.user.sync(msg.chat.id):
+                    return await start(msg, state)
+            return await coro(msg, state)
+        return inner
     return wrapper
 
 @router.message(CommandStart())
@@ -92,7 +96,7 @@ async def get_email(msg: types.Message, state: FSMContext):
             await msg.answer(text.email_tip, reply_markup = Markup.no_buttons())
 
 @router.message(F.text == text.Btn.AUTH.value)
-@require_auth
+@require_auth()
 @log
 async def auth(msg: types.Message, state: FSMContext):
     '''Авторизация на сайте'''
@@ -108,7 +112,7 @@ async def auth(msg: types.Message, state: FSMContext):
         await get_menu(msg, state)
 
 @router.message(F.text == text.Btn.HELP.value)
-@require_auth
+@require_auth()
 @log
 async def help(msg: types.Message, state: FSMContext):
     '''Раздел Помощь'''
@@ -128,7 +132,7 @@ async def back(msg: types.Message, state: FSMContext):
 
 @router.message(Command('menu'))
 @router.message(F.text)
-@require_auth
+@require_auth(clear_history = True)
 @log
 async def get_menu(msg: types.Message, state: FSMContext):
     '''Команда меню и другие непонятные запросы'''

@@ -19,7 +19,7 @@ class PropertyPage(StatesGroup):
     building = State()
 
 @router.message(F.text == text.Btn.NEW_SUBSCRIPTION.value)
-@require_auth
+@require_auth()
 @log
 async def start(msg: types.Message, state: FSMContext):
     '''Раздел Новая подписка - выбор города'''
