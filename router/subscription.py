@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from .menu import get_menu, reload, require_auth
-from telegrambot.app import text, Markup, App, log, UserRepository, \
+from telegrambot.app import text, Markup, App, log, to_async, UserRepository, \
     get_favorites_subscr, remove_user_favorites_flat, remove_user_favorites_commercial
 from telegrambot.models import TgUser
 
@@ -127,6 +127,7 @@ async def choice(msg: types.Message, state: FSMContext):
     elif msg.text == text.Btn.BACK.value:
         return await menu(msg, state)
 
+@log
 async def send_favorites_obj():
     '''Отправка уведомлений об изменении цен в избранном'''
     get_favorites = await get_favorites_subscr()
@@ -134,25 +135,29 @@ async def send_favorites_obj():
         res_user_obj = await UserRepository().get_favorites_obj(user_subscr.user)
         for text_item in res_user_obj:
             if user_subscr.user.telegramchat_set.first():
-                await App.bot.send_message(chat_id=user_subscr.user.telegramchat_set.first().telegram_id,
-                                             text='<strong>Уведомление об изменение цен в избранном в вашем личном '
-                                                  'кабинете</strong>\n\n' + text_item['text'], parse_mode='html',
-                                             reply_markup=Markup.inline_buttons(
-                [[types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')]]))
+                await App.bot.send_message(
+                    chat_id = user_subscr.user.telegramchat_set.first().telegram_id,
+                    text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
+                        'кабинете</strong>\n\n' + text_item['text'], 
+                    parse_mode = 'html',
+                    reply_markup = Markup.inline_buttons(
+                        [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')] ]
+                    )
+                )
             else:
-                try:
-                    user_profile = user_subscr.user.profile
-                    if user_profile:
-                        tg_user = TgUser.objects.filter(user_profile=user_profile).first()
-                        if tg_user:
-                            await App.bot.send_message(chat_id=tg_user.chat_id,
-                                                         text='<strong>Уведомление об изменение цен в избранном в вашем личном '
-                                                          'кабинете</strong>\n\n' + text_item['text'], parse_mode='html',
-                                                     reply_markup=Markup.inline_buttons(
-                        [[types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')]]))
-                except Exception as e:
-                    logging.error('err = ', e)
-
+                user_profile = user_subscr.user.profile
+                if user_profile:
+                    tg_user = to_async(TgUser.objects.filter(user_profile = user_profile).first)()
+                    if tg_user:
+                        await App.bot.send_message(
+                            chat_id = tg_user.chat_id,
+                            text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
+                                'кабинете</strong>\n\n' + text_item['text'], 
+                            parse_mode = 'html',
+                            reply_markup = Markup.inline_buttons(
+                                [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')] ]
+                            )
+                        )
 
 @router.callback_query(F.data.startswith('delete_'))
 @log

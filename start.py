@@ -25,31 +25,22 @@ async def main():
         commands = [ types.BotCommand(command = 'menu', description = 'В меню') ]
         await app.bot.set_my_commands(commands, types.BotCommandScopeDefault())
     scheduler = AsyncIOScheduler(timezone = config.REGION)
-    if config.DEBUG:
-        scheduler.add_job(
-            app.dispatch_to_clients, 
-            trigger = 'cron', 
-            day_of_week = '0,1,2,3,4,5,6',
-            minute = '*',
-            start_date = datetime.datetime.now()
-        )
-    else:
-        scheduler.add_job(
-            app.dispatch_to_clients, 
-            trigger = 'cron', 
-            day_of_week = '0,1,2,3,4,5,6',
-            hour = int(config.DISPATCH_TIME.split(':')[0]), 
-            minute = int(config.DISPATCH_TIME.split(':')[1]),
-            start_date = datetime.datetime.now()
-        )
-        scheduler.add_job(
-            send_favorites_obj,
-            trigger='cron',
-            day_of_week='0,1,2,3,4,5,6',
-            hour=14,
-            minute=50,
-            start_date=datetime.datetime.now()
-        )
+    scheduler.add_job(
+        app.dispatch_to_clients, 
+        trigger = 'cron', 
+        day_of_week = '0,1,2,3,4,5,6',
+        hour = int(config.DISPATCH_TIME.split(':')[0]) if config.DISPATCH_TIME != '*' else '*', 
+        minute = int(config.DISPATCH_TIME.split(':')[1]) if config.DISPATCH_TIME != '*' else '*',
+        start_date = datetime.datetime.now()
+    )
+    scheduler.add_job(
+        send_favorites_obj,
+        trigger='cron',
+        day_of_week='0,1,2,3,4,5,6',
+        hour=14,
+        minute=50,
+        start_date=datetime.datetime.now()
+    )
     scheduler.start()
     
     dp = Dispatcher(storage = MemoryStorage())

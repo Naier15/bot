@@ -27,7 +27,7 @@ class CityRepository:
             cities.append({
                 'id': str(x['id']),
                 'name': x['city_name'],
-                'url': f'{config.DJANGO_HOST}/property/{x['city_slug']}/'
+                'url': f'{config.DJANGO_HOST}/property/{x['city_slug']}/flats/'
             })
         return cities
     
