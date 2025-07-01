@@ -13,7 +13,7 @@ router = Router()
 async def flats(msg: types.Message, state: FSMContext):
     '''Раздел Каталог квартир'''
     cities = await CityRepository().get()
-    city_name = [f"<a href=f'{city['url']}'>{city['name']}</a>" for city in cities]
+    city_name = [f'<a href="{city['url']}">{city['name']}</a>' for city in cities]
     city_name = '\n'.join(city_name)
     await msg.answer(
         f'{text.flats}\n{city_name}',
