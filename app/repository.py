@@ -1,7 +1,7 @@
 from typing import Optional
 import secrets, string
 
-from .utils import to_async, log
+from .utils import to_async
 from config import Config
 from authapp.models import UserProfile
 from property.models import City, Property, Buildings, CheckTermsPassKeys, BuildingPhotos
@@ -208,6 +208,9 @@ class UserRepository:
         '''Получить список пользователей для ежедневной рассылки новостей'''
         return await to_async(TgUser.objects.values_list)('chat_id', flat = True)
 
+
+class FavoriteRepository:
+
     async def get_favorites_obj(self, subscr_user) -> list[str]:
         '''Избранное квартир и коммерции в ЛК'''
         fav_flats = await to_async(FavoritesFlats.objects.filter(user=subscr_user).all)()
@@ -258,17 +261,18 @@ class UserRepository:
                     text_list.append({'id': f'com_{fav_com.id}','text': text})
         return text_list
 
+    async def get_favorites_subscr(self):
+        return await to_async(UserSubscription.objects.filter(
+            subscription_type = 'favorites', 
+            telegram_subscription = True
+        ).all)()
 
-async def get_favorites_subscr():
-    subscribers = await to_async(UserSubscription.objects.filter(subscription_type='favorites', telegram_subscription=True).all)()
-    return subscribers
+    async def remove_user_favorites_flat(self, obj_id: str) -> None:
+        fav = await to_async(FavoritesFlats.objects.filter(pk=obj_id).first)()
+        if fav:
+            await fav.adelete()
 
-async def remove_user_favorites_flat(obj_id: str) -> None:
-    fav = await to_async(FavoritesFlats.objects.filter(pk=obj_id).first)()
-    if fav:
-        await fav.adelete()
-
-async def remove_user_favorites_commercial(obj_id: str) -> None:
-    fav = await to_async(FavoritesCommercial.objects.filter(pk=obj_id).first)()
-    if fav:
-        await fav.adelete()
+    async def remove_user_favorites_commercial(self, obj_id: str) -> None:
+        fav = await to_async(FavoritesCommercial.objects.filter(pk=obj_id).first)()
+        if fav:
+            await fav.adelete()

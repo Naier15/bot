@@ -1,13 +1,9 @@
-import logging
-
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
+from telegrambot.app import text, Markup, App, FavoriteRepository, log
 from .menu import get_menu, reload, require_auth
-from telegrambot.app import text, Markup, App, log, to_async, UserRepository, \
-    get_favorites_subscr, remove_user_favorites_flat, remove_user_favorites_commercial
-from telegrambot.models import TgUser
 
 
 router = Router()
@@ -127,38 +123,6 @@ async def choice(msg: types.Message, state: FSMContext):
     elif msg.text == text.Btn.BACK.value:
         return await menu(msg, state)
 
-@log
-async def send_favorites_obj():
-    '''Отправка уведомлений об изменении цен в избранном'''
-    get_favorites = await get_favorites_subscr()
-    for user_subscr in get_favorites:
-        res_user_obj = await UserRepository().get_favorites_obj(user_subscr.user)
-        for text_item in res_user_obj:
-            if user_subscr.user.telegramchat_set.first():
-                await App.bot.send_message(
-                    chat_id = user_subscr.user.telegramchat_set.first().telegram_id,
-                    text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
-                        'кабинете</strong>\n\n' + text_item['text'], 
-                    parse_mode = 'html',
-                    reply_markup = Markup.inline_buttons(
-                        [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')] ]
-                    )
-                )
-            else:
-                user_profile = user_subscr.user.profile
-                if user_profile:
-                    tg_user = to_async(TgUser.objects.filter(user_profile = user_profile).first)()
-                    if tg_user:
-                        await App.bot.send_message(
-                            chat_id = tg_user.chat_id,
-                            text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
-                                'кабинете</strong>\n\n' + text_item['text'], 
-                            parse_mode = 'html',
-                            reply_markup = Markup.inline_buttons(
-                                [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')] ]
-                            )
-                        )
-
 @router.callback_query(F.data.startswith('delete_'))
 @log
 async def remove_result(call: types.CallbackQuery):
@@ -166,8 +130,7 @@ async def remove_result(call: types.CallbackQuery):
     (Callback func при отправке уведомлений об изменении цен в избранном)'''
     obj_id = call.data.split('_')[-1]
     if call.data.startswith('delete_flat'):
-        await remove_user_favorites_flat(obj_id)
+        await FavoriteRepository().remove_user_favorites_flat(obj_id)
     elif call.data.startswith('delete_com'):
-        await remove_user_favorites_commercial(obj_id)
-    await call.answer()
+        await FavoriteRepository().remove_user_favorites_commercial(obj_id)
     await call.message.answer('Объект удален из избранного')

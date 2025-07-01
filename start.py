@@ -3,22 +3,19 @@ from aiogram import Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from config import Config, connect_django, init_log
+from config import Config
 config = Config()
-init_log(config.LOG_FILE)
-connect_django(config.DJANGO_PATH)
+config.setup()
 
 from app import App, log
 from router import menu_router # Страница главного меню и раздел помощь
 from router import buildings_router # Разделы квартир и офисов
 from router import subscription_router # Раздел подписок - просмотр, удаление
 from router import property_router # Раздел добавления новой подписки
-from router import send_favorites_obj
 
 
 @log
 async def main():
-    connect_django(config.DJANGO_PATH)
     app = App()
     await app.bot.delete_webhook(drop_pending_updates = True)  
     if config.TO_SET_COMMANDS:
@@ -34,7 +31,7 @@ async def main():
         start_date = datetime.datetime.now()
     )
     scheduler.add_job(
-        send_favorites_obj,
+        app.send_favorites_obj,
         trigger='cron',
         day_of_week='0,1,2,3,4,5,6',
         hour=14,

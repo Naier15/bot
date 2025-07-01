@@ -1,14 +1,11 @@
 from functools import partial, wraps
 from time import perf_counter
-
-import aiofiles.os
+from typing import Optional, Self, Coroutine
 from aiogram import types
 from PIL import Image
 from io import BytesIO
-from typing import Optional, Self, Coroutine
-import logging, inspect, math, os, aiohttp, aiofiles
-
 from asgiref.sync import sync_to_async
+import logging, inspect, math, os, aiohttp, aiofiles, aiofiles.os
 
 
 to_async = partial(sync_to_async, thread_sensitive = False)

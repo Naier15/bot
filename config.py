@@ -2,9 +2,7 @@ from dataclasses import dataclass
 from os import environ
 from dotenv import load_dotenv
 from sys import path
-import logging, os, sys
-
-import django.conf, django
+import logging, os, sys, django.conf, django
 
 
 res = load_dotenv()
@@ -49,3 +47,7 @@ class Config:
     REGION = environ.get('REGION', 'Asia/Vladivostok')
     DEBUG = bool(environ.get('DEBUG', 0))
     DISPATCH_TIME = environ.get('DISPATCH_TIME', '16:20')
+
+    def setup(self) -> None:
+        init_log(self.LOG_FILE)
+        connect_django(self.DJANGO_PATH)

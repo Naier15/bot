@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from .repository import SubscriptionRepository, PhotoRepository, UserRepository
+from .repository import SubscriptionRepository, PhotoRepository, UserRepository, FavoriteRepository
 from .utils import Markup, Tempfile, log, to_async
 from . import text
 from config import Config
@@ -363,3 +363,35 @@ class App:
             for subscription in user.subscriptions:
                 tg_user = await user.get()
                 await subscription.send_info(tg_user, is_dispatch = True)
+
+    @log
+    async def send_favorites_obj(self) -> None:
+        '''Отправка уведомлений об изменении цен в избранном'''
+        get_favorites = await FavoriteRepository().get_favorites_subscr()
+        for user_subscr in get_favorites:
+            res_user_obj = await FavoriteRepository().get_favorites_obj(user_subscr.user)
+            for text_item in res_user_obj:
+                if user_subscr.user.telegramchat_set.first():
+                    await App.bot.send_message(
+                        chat_id = user_subscr.user.telegramchat_set.first().telegram_id,
+                        text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
+                            'кабинете</strong>\n\n' + text_item['text'], 
+                        parse_mode = 'html',
+                        reply_markup = Markup.inline_buttons(
+                            [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')] ]
+                        )
+                    )
+                else:
+                    user_profile = user_subscr.user.profile
+                    if user_profile:
+                        tg_user = to_async(TgUser.objects.filter(user_profile = user_profile).first)()
+                        if tg_user:
+                            await App.bot.send_message(
+                                chat_id = tg_user.chat_id,
+                                text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
+                                    'кабинете</strong>\n\n' + text_item['text'], 
+                                parse_mode = 'html',
+                                reply_markup = Markup.inline_buttons(
+                                    [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')] ]
+                                )
+                            )
