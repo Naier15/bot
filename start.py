@@ -47,9 +47,7 @@ async def main():
 		property_router,
 		menu_router
 	)]
-    print('Start')
     await dp.start_polling(app.bot, allowed_updates = dp.resolve_used_update_types())
-
 
 if __name__ == '__main__':
     asyncio.run(main())

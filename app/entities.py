@@ -353,7 +353,6 @@ class App:
     @log
     async def dispatch_to_clients(self) -> None:
         '''Рассылка клиентам'''
-        logging.info(f'{datetime.datetime.now()} DISPATCHING')
         user_repository = UserRepository()
         chats = await user_repository.get_dispatch_list()
         async for chat_id in chats:

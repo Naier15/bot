@@ -104,7 +104,15 @@ def log(coro: Coroutine) -> Coroutine:
     @wraps(coro)
     async def wrapper(*args, **kwargs):
         logger = logging.getLogger(os.path.abspath(inspect.getfile(coro)))
-        logger.debug(coro.__name__)
+
+        if len(args) > 0 and isinstance(args[0], types.Message):
+            username = f'{args[0].chat.username}({args[0].chat.id})'
+        elif len(args) > 0 and isinstance(args[0], types.CallbackQuery):
+            username = f'{args[0].message.chat.username}({args[0].message.chat.id})'
+        else:
+            username = 'x'
+
+        logger.info(f'{coro.__name__} - {username}')
         try:
             return await coro(*args, **kwargs)
         except Exception as ex:

@@ -13,12 +13,12 @@ def connect_django(path_to_django: str):
     environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
     if not django.conf.settings.configured:
         django.setup()
-        logging.debug(f'--- Connected to Django models - {django.conf.settings.configured} ---')
+        logging.info(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
 def init_log(log_file: str):
-    formatter = logging.Formatter('%(asctime)s -- %(name)s -- %(levelname)s -- %(message)s')
+    formatter = logging.Formatter('%(asctime)s -- %(levelname)s -- %(name)s -- %(message)s')
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     for handler in logger.handlers:
         logger.removeHandler(handler)
@@ -35,6 +35,12 @@ def init_log(log_file: str):
     console = logging.StreamHandler(sys.stdout)
     console.setFormatter(formatter)
     logger.addHandler(console)
+
+    logging.getLogger('apscheduler.scheduler').setLevel(logging.INFO)
+    logging.getLogger('aiogram.dispatcher').setLevel(logging.INFO)
+    logging.getLogger('aiogram.event').setLevel(logging.WARNING)
+    logging.getLogger('PIL.Image').setLevel(logging.WARNING)
+    logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
 
 @dataclass
 class Config:
