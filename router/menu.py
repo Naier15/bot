@@ -63,7 +63,7 @@ async def start(msg: types.Message, state: FSMContext):
 async def get_contact(msg: types.Message, state: FSMContext):
     '''Регистрация пользователя'''
     async with App(state) as app:
-        if await app.user.set_phone(msg.contact.phone_number.strip().replace(' ', '').replace('-', '')):
+        if msg.contact and await app.user.set_phone(msg.contact.phone_number.strip().replace(' ', '').replace('-', '')):
             await app.user.set_id(msg.chat.id)
             await app.user.set_login(msg.from_user.username)
             if not await app.user.is_exist():
