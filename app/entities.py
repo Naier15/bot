@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Self
-import re, datetime, logging
+import re, logging
 
 from aiogram import Bot, types
 from aiogram.fsm.state import State
@@ -117,7 +117,7 @@ class Subscription:
             await App.bot.send_message(
                 user.chat_id, 
                 answer, 
-                reply_markup = App.menu() if is_dispatch else Markup.bottom_buttons([ [types.KeyboardButton(text = text.Btn.BACK.value)] ])
+                reply_markup = App.menu() if is_dispatch else App.subscription_menu()
             )
             exception = None
             try:
@@ -247,7 +247,6 @@ class User:
             for building in await to_async(tg_user.building.all)()
         ]
         [await x.sync() for x in self.subscriptions]
-        [x.photos for x in self.subscriptions]
         self.is_sync = True
         return True
     
@@ -319,6 +318,23 @@ class App:
             ],
             [
                 types.KeyboardButton(text = text.Btn.HELP.value)
+            ]
+        ]
+        return Markup.bottom_buttons(btns)
+    
+    @staticmethod
+    def subscription_menu() -> types.ReplyKeyboardMarkup:
+        '''Кнопки меню управления подписками'''
+        btns = [
+            [
+                types.KeyboardButton(text = text.Btn.SUBSCRIPTION_LIST.value)
+            ],
+            [
+                types.KeyboardButton(text = text.Btn.NEW_SUBSCRIPTION.value), 
+                types.KeyboardButton(text = text.Btn.REMOVE_SUBSCRIPTION.value)
+            ], 
+            [
+                types.KeyboardButton(text = text.Btn.TO_MENU.value)
             ]
         ]
         return Markup.bottom_buttons(btns)

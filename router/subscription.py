@@ -21,14 +21,7 @@ async def menu(msg: types.Message, state: FSMContext):
         await app.set_state(SubscriptionPage.menu, state)
     await msg.answer(
         text.subscription_menu, 
-        reply_markup = Markup.bottom_buttons([
-            [types.KeyboardButton(text = text.Btn.SUBSCRIPTION_LIST.value)],
-            [
-                types.KeyboardButton(text = text.Btn.NEW_SUBSCRIPTION.value), 
-                types.KeyboardButton(text = text.Btn.REMOVE_SUBSCRIPTION.value)
-            ], 
-            [types.KeyboardButton(text = text.Btn.TO_MENU.value)]
-        ])
+        reply_markup = App.subscription_menu()
     )
     
 @router.message(SubscriptionPage.menu, F.text == text.Btn.SUBSCRIPTION_LIST.value)
@@ -47,7 +40,7 @@ async def list(msg: types.Message, state: FSMContext):
             text.subscriptions, 
             reply_markup = Markup.inline_buttons(
                 subscription_btns +
-                [[types.InlineKeyboardButton(text = text.Btn.BACK.value, callback_data = 'back')]]
+                [ [types.InlineKeyboardButton(text = text.Btn.BACK.value, callback_data = 'back')] ]
             ) 
         )
 
@@ -59,7 +52,10 @@ async def remove(msg: types.Message, state: FSMContext):
     async with App(state) as app:
         subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
-            return await msg.answer(text.subscription_empty, reply_markup = Markup.current())
+            return await msg.answer(
+                text.subscription_empty, 
+                reply_markup = Markup.current()
+            )
         
         await msg.answer(
             text.subscription_remove, 
@@ -106,9 +102,12 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
         if call.data == 'back': 
             return await menu(call.message, state)
         else:
-            subscription = [x for x in app.user.subscriptions if x.building_id == call.data][0]
-            tg_user = await app.user.get()
-            await subscription.send_info(tg_user)
+            try:
+                subscription = [x for x in app.user.subscriptions if x.building_id == call.data][0]
+                tg_user = await app.user.get()
+                await subscription.send_info(tg_user)
+            except IndexError as ex:
+                await call.message.answer(text.subscription_deleted)
 
 @router.message(SubscriptionPage.menu)
 @reload
