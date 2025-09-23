@@ -1,5 +1,6 @@
 from functools import wraps
 from typing import Coroutine, Callable
+from os import name as os_name
 
 from aiogram import Router, F, types
 from aiogram.filters import Command, CommandStart
@@ -102,7 +103,8 @@ async def auth(msg: types.Message, state: FSMContext):
     '''Авторизация на сайте'''
     async with App(state) as app:
         tg_user = await app.user.get(msg.chat.id)
-        cache.set('telegram_user', tg_user.user_profile.user, 120)
+        if os_name == 'posix': 
+            cache.set('telegram_user', tg_user.user_profile.user, 120)
         await msg.answer(
             text.auth, 
             reply_markup = Markup.inline_buttons([ 

@@ -53,6 +53,7 @@ class Config:
     REGION = environ.get('REGION', 'Asia/Vladivostok')
     DEBUG = bool(environ.get('DEBUG', 0))
     DISPATCH_TIME = environ.get('DISPATCH_TIME', '16:20')
+    CHANGE_PRICES_TIME = environ.get('CHANGE_PRICES_TIME', '14:50')
 
     def setup(self) -> None:
         init_log(self.LOG_FILE)

@@ -382,8 +382,8 @@ class App:
     @log
     async def send_favorites_obj(self) -> None:
         '''Отправка уведомлений об изменении цен в избранном'''
-        get_favorites = await FavoriteRepository().get_favorites_subscr()
-        for user_subscr in get_favorites:
+        favorites = await FavoriteRepository().get_favorites_subscr()
+        for user_subscr in favorites:
             res_user_obj = await FavoriteRepository().get_favorites_obj(user_subscr.user)
             for text_item in res_user_obj:
                 if user_subscr.user.telegramchat_set.first():

@@ -7,6 +7,8 @@ from io import BytesIO
 from asgiref.sync import sync_to_async
 import logging, inspect, math, os, aiohttp, aiofiles, aiofiles.os
 
+from . import text
+
 
 to_async = partial(sync_to_async, thread_sensitive = False)
 
@@ -41,6 +43,10 @@ class Markup:
                 inline_keyboard = btn
             )
         )
+    
+    @staticmethod
+    def back_button() -> list[list[types.InlineKeyboardMarkup]]:
+        return [ [types.InlineKeyboardButton(text = text.Btn.BACK.value, callback_data = 'back')] ]
     
     @staticmethod
     def no_buttons() -> types.ReplyKeyboardRemove:

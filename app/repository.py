@@ -1,5 +1,5 @@
 from typing import Optional
-import secrets, string
+import secrets
 
 from .utils import to_async
 from config import Config
@@ -140,12 +140,10 @@ class UserRepository:
 
     async def create_user(self, chat_id: str, login: str, phone_number: str, email: Optional[str] = None) -> bool:
         '''Создать пользователя'''
-        with transaction.atomic():
-            alphabet = string.ascii_letters + string.digits
-            password = ''.join(secrets.choice(alphabet) for _ in range(16))
+        async with transaction.atomic():
             user = await to_async(DjUser.objects.create_user)(
                 username = login,
-                password = password,
+                password = secrets.token_urlsafe(16),
                 email = email
             )
             profile = await UserProfile.objects.acreate(
@@ -171,14 +169,12 @@ class UserRepository:
     async def get_user(self, chat_id: Optional[int] = None, name: Optional[str] = None) -> Optional[TgUser]:
         '''Получение пользователя'''
         if (chat_id is not None and name is not None) or (chat_id is None and name is None):
-            raise Exception('UserRepository.get_user() requires one parameter at least')
+            raise ValueError('UserRepository.get_user() requires exactly one parameter: chat_id or name')
         try:
-            if chat_id is not None:
-                return await TgUser.objects.select_related('user_profile__user').aget(chat_id = chat_id)
-            elif name is not None:
-                return await TgUser.objects.select_related('user_profile__user').aget(
-                    user_profile__user__username = name
-                )
+            qs = await to_async(TgUser.objects.select_related)('user_profile__user')
+            if chat_id:
+                return await qs.aget(chat_id = chat_id)
+            return await qs.aget(user_profile__user__username = name)
         except TgUser.DoesNotExist:
             return None
 
@@ -188,10 +184,8 @@ class UserRepository:
         if not tg_user:
             return
         building = await Buildings.objects.aget(id = building_id)
-        if await tg_user.building.acontains(building):
-            return
-        await tg_user.building.aadd(building)
-        await tg_user.asave()
+        if not await tg_user.building.acontains(building):
+            await tg_user.building.aadd(building)
 
     async def remove_subscription(self, chat_id: int, building_id: str) -> None:
         '''Удалить подписку у пользователя'''
@@ -199,14 +193,15 @@ class UserRepository:
         if not tg_user:
             return
         building = await Buildings.objects.aget(id = building_id)
-        if not await tg_user.building.acontains(building):
-            return
-        await tg_user.building.aremove(building)
-        await tg_user.asave()
+        if await tg_user.building.acontains(building):
+            await tg_user.building.aremove(building)
+        
         
     async def get_dispatch_list(self) -> list[int]:
         '''Получить список пользователей для ежедневной рассылки новостей'''
-        return await to_async(TgUser.objects.values_list)('chat_id', flat = True)
+        return await to_async(list)(
+            TgUser.objects.values_list('chat_id', flat = True)
+        )
 
 
 class FavoriteRepository:
@@ -247,7 +242,10 @@ class FavoriteRepository:
                     text = (f'{fl}, №{num_fl}, на {floor}-м этаже в ЖК {zhk}\nЦена при добавлении в избранное: '
                             f'{price(str(fav_flat.price))} руб.\nТекущая стоимость: {price(str(cur_price))} руб.')
 
-                    text_list.append({'id': f'flat_{fav_flat.id}', 'text':text})
+                    text_list.append({
+                        'id': f'flat_{fav_flat.id}', 
+                        'text':text
+                    })
 
         fav_commercial = await to_async(FavoritesCommercial.objects.filter(user=subscr_user).all)()
         for fav_com in fav_commercial:

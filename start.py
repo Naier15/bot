@@ -30,13 +30,14 @@ async def main():
         minute = int(config.DISPATCH_TIME.split(':')[1]) if config.DISPATCH_TIME != '*' else '*',
         start_date = datetime.datetime.now()
     )
+    await app.send_favorites_obj()
     scheduler.add_job(
         app.send_favorites_obj,
-        trigger='cron',
-        day_of_week='0,1,2,3,4,5,6',
-        hour=14,
-        minute=50,
-        start_date=datetime.datetime.now()
+        trigger = 'cron',
+        day_of_week = '0,1,2,3,4,5,6',
+        hour = int(config.CHANGE_PRICES_TIME.split(':')[0]) if config.CHANGE_PRICES_TIME != '*' else '*',
+        minute = int(config.CHANGE_PRICES_TIME.split(':')[1]) if config.CHANGE_PRICES_TIME != '*' else '*',
+        start_date = datetime.datetime.now()
     )
     scheduler.start()
     

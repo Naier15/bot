@@ -39,15 +39,14 @@ async def list(msg: types.Message, state: FSMContext):
         await msg.answer(
             text.subscriptions, 
             reply_markup = Markup.inline_buttons(
-                subscription_btns +
-                [ [types.InlineKeyboardButton(text = text.Btn.BACK.value, callback_data = 'back')] ]
+                subscription_btns + Markup.back_button()
             ) 
         )
 
 @router.message(SubscriptionPage.menu, F.text == text.Btn.REMOVE_SUBSCRIPTION.value)
 @require_auth()
 @log
-async def remove(msg: types.Message, state: FSMContext):
+async def remove_subscription_prompt(msg: types.Message, state: FSMContext):
     '''Удаление подписки'''
     async with App(state) as app:
         subscription_btns = await app.user.form_subscriptions_as_buttons()
@@ -60,8 +59,7 @@ async def remove(msg: types.Message, state: FSMContext):
         await msg.answer(
             text.subscription_remove, 
             reply_markup = Markup.inline_buttons(
-                subscription_btns + 
-                [[types.InlineKeyboardButton(text = text.Btn.BACK.value, callback_data = 'back')]]
+                subscription_btns + Markup.back_button()
             )
         )
         await app.set_state(SubscriptionPage.remove, state)
@@ -69,13 +67,13 @@ async def remove(msg: types.Message, state: FSMContext):
 @router.message(SubscriptionPage.remove, F.text)
 @reload
 @log
-async def remove_error(msg: types.Message, state: FSMContext):
+async def remove_subscription_invalid(msg: types.Message, state: FSMContext):
     '''Ошибка удаления подписки'''
     await msg.answer(text.choose_property_error)
 
 @router.callback_query(SubscriptionPage.remove, F.data)
 @log
-async def remove_result(call: types.CallbackQuery, state: FSMContext):
+async def remove_subscription_confirmed(call: types.CallbackQuery, state: FSMContext):
     '''Удаление подписки и возвращение в главное меню раздела Подписки'''
     async with App(state) as app:
         if call.data == 'back':
@@ -102,25 +100,28 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
         if call.data == 'back': 
             return await menu(call.message, state)
         else:
-            try:
-                subscription = [x for x in app.user.subscriptions if x.building_id == call.data][0]
-                tg_user = await app.user.get()
-                await subscription.send_info(tg_user)
-            except IndexError as ex:
-                await call.message.answer(text.subscription_deleted)
+            subscription = next(( x for x in app.user.subscriptions if x.building_id == call.data ), None)
+            if not subscription:
+                return await call.message.answer(text.subscription_deleted)
+
+            tg_user = await app.user.get()
+            await subscription.send_info(tg_user)
 
 @router.message(SubscriptionPage.menu)
 @reload
 @log
 async def choice(msg: types.Message, state: FSMContext):
     '''Выбор кнопок меню'''
-    if msg.text == text.Btn.TO_MENU.value:
-        return await get_menu(msg, state)
-    elif msg.text == text.Btn.NEW_SUBSCRIPTION.value:
-        from .property import start
-        return await start(msg, state)
-    elif msg.text == text.Btn.BACK.value:
-        return await menu(msg, state)
+    from .property import start
+
+    actions = {
+        text.Btn.TO_MENU.value:             get_menu,
+        text.Btn.NEW_SUBSCRIPTION.value:    start,
+        text.Btn.BACK.value:                menu
+    }
+    handler = actions.get(msg.text)
+    if handler:
+        return await handler(msg, state)
 
 @router.callback_query(F.data.startswith('delete_'))
 @log
