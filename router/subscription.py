@@ -2,7 +2,9 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from telegrambot.app import text, Markup, App, FavoriteRepository, log
+from repositories import FavoriteRepository
+from entities import App
+from internal import text, Markup, log
 from .menu import get_menu, reload, require_auth
 
 
@@ -105,7 +107,10 @@ async def subscription_card(call: types.CallbackQuery, state: FSMContext):
                 return await call.message.answer(text.subscription_deleted)
 
             tg_user = await app.user.get()
-            await subscription.send_info(tg_user)
+            news = await subscription.form_news(tg_user)
+            if news is not None:
+                answer, photos_to_show = news
+                await app.send_news(tg_user, answer, photos_to_show, False)
 
 @router.message(SubscriptionPage.menu)
 @reload

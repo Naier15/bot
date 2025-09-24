@@ -1,12 +1,12 @@
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-
 import fuzzywuzzy
 import fuzzywuzzy.process
 
-from telegrambot.app import text, PageBuilder, App, log, \
-    CityRepository, PropertyRepository, BuildingRepository
+from repositories import CityRepository, PropertyRepository, BuildingRepository
+from entities import App
+from internal import text, PageBuilder, log
 from .menu import reload, require_auth
 from .subscription import menu, SubscriptionPage
 

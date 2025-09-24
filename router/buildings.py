@@ -1,7 +1,9 @@
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
-from telegrambot.app import text, CityRepository, log, App
+from entities import App
+from repositories import CityRepository
+from internal import text, log
 from .menu import require_auth
 
 

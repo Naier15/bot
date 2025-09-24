@@ -7,7 +7,8 @@ from config import Config
 config = Config()
 config.setup()
 
-from app import App, log
+from entities import App
+from internal import log
 from router import menu_router # Страница главного меню и раздел помощь
 from router import buildings_router # Разделы квартир и офисов
 from router import subscription_router # Раздел подписок - просмотр, удаление

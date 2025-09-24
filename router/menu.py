@@ -1,14 +1,14 @@
 from functools import wraps
 from typing import Coroutine, Callable
 from os import name as os_name
-
 from aiogram import Router, F, types
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from django.core.cache import cache
 
-from telegrambot.app import text, Markup, App, log
+from entities import App
+from internal import text, Markup, log
 
 
 router = Router()
