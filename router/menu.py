@@ -26,6 +26,9 @@ def reload(coro: Coroutine) -> Coroutine:
             if msg.text == text.Btn.START.value:
                 await app.clear_history(with_user = True)
                 return await start(msg, state)
+            elif msg.text == text.Btn.TO_MENU.value:
+                await app.clear_history()
+                return await get_menu(msg, state)
         return await coro(msg, state)
     return wrapper
 
