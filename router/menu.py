@@ -69,7 +69,7 @@ async def get_contact(msg: types.Message, state: FSMContext):
     async with App(state) as app:
         if msg.contact and await app.user.set_phone(msg.contact.phone_number.strip().replace(' ', '').replace('-', '')):
             await app.user.set_id(msg.chat.id)
-            await app.user.set_login(msg.from_user.username)
+            await app.user.set_login(msg.from_user.username or msg.chat.id)
             if not await app.user.is_exist():
                 saved = await app.user.save()
                 if not saved:
