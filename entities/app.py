@@ -2,6 +2,7 @@ from typing import Optional, Self
 import logging
 
 from aiogram import Bot, types
+from aiogram.exceptions import TelegramForbiddenError
 from aiogram.fsm.state import State
 from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
@@ -106,32 +107,35 @@ class App:
     
     @log
     async def send_news(self, user: TgUser, answer: str, photos_to_show: list[tuple[int, str, str]], is_dispatch: bool) -> None:        
-        await App.bot.send_message(
-            user.chat_id, 
-            answer, 
-            reply_markup = App.menu() if is_dispatch else App.subscription_menu()
-        )
-        exception = None
         try:
-            for id, url, month in photos_to_show:
-                photo = types.InputMediaPhoto(
-                    media = url,
-                    caption = month
-                )
-                await App.bot.send_media_group(user.chat_id, [photo])
-        except Exception as ex:
-            exception = ex
+            await App.bot.send_message(
+                user.chat_id, 
+                answer, 
+                reply_markup = App.menu() if is_dispatch else App.subscription_menu()
+            )
+            exception = None
             try:
-                for id, url, month in photos_to_show: 
-                    ext = url.split('.')[-1]
-                    async with Tempfile(f'{id}.{ext}', url) as tempfile:
-                        photo = types.InputMediaPhoto(
-                            media = types.FSInputFile(tempfile),
-                            caption = month
-                        )
-                        await App.bot.send_media_group(user.chat_id, [photo])
+                for id, url, month in photos_to_show:
+                    photo = types.InputMediaPhoto(
+                        media = url,
+                        caption = month
+                    )
+                    await App.bot.send_media_group(user.chat_id, [photo])
             except Exception as ex:
-                logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
+                exception = ex
+                try:
+                    for id, url, month in photos_to_show: 
+                        ext = url.split('.')[-1]
+                        async with Tempfile(f'{id}.{ext}', url) as tempfile:
+                            photo = types.InputMediaPhoto(
+                                media = types.FSInputFile(tempfile),
+                                caption = month
+                            )
+                            await App.bot.send_media_group(user.chat_id, [photo])
+                except Exception as ex:
+                    logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
+        except TelegramForbiddenError:
+            pass
     
     @log
     async def dispatch_to_clients(self) -> None:
