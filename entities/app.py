@@ -113,29 +113,30 @@ class App:
                 answer, 
                 reply_markup = App.menu() if is_dispatch else App.subscription_menu()
             )
-            exception = None
-            try:
-                for id, url, month in photos_to_show:
-                    photo = types.InputMediaPhoto(
-                        media = url,
-                        caption = month
-                    )
-                    await App.bot.send_media_group(user.chat_id, [photo])
-            except Exception as ex:
-                exception = ex
-                try:
-                    for id, url, month in photos_to_show: 
-                        ext = url.split('.')[-1]
-                        async with Tempfile(f'{id}.{ext}', url) as tempfile:
-                            photo = types.InputMediaPhoto(
-                                media = types.FSInputFile(tempfile),
-                                caption = month
-                            )
-                            await App.bot.send_media_group(user.chat_id, [photo])
-                except Exception as ex:
-                    logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
         except TelegramForbiddenError:
-            pass
+            return
+
+        exception = None
+        try:
+            for id, url, month in photos_to_show:
+                photo = types.InputMediaPhoto(
+                    media = url,
+                    caption = month
+                )
+                await App.bot.send_media_group(user.chat_id, [photo])
+        except Exception as ex:
+            exception = ex
+            try:
+                for id, url, month in photos_to_show: 
+                    ext = url.split('.')[-1]
+                    async with Tempfile(f'{id}.{ext}', url) as tempfile:
+                        photo = types.InputMediaPhoto(
+                            media = types.FSInputFile(tempfile),
+                            caption = month
+                        )
+                        await App.bot.send_media_group(user.chat_id, [photo])
+            except Exception as ex:
+                logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
     
     @log
     async def dispatch_to_clients(self) -> None:
