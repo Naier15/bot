@@ -160,31 +160,31 @@ class App:
     @log
     async def send_favorites_obj(self) -> None:
         '''Отправка уведомлений об изменении цен в избранном'''
-        favorites = await FavoriteRepository().get_favorites_subscr()
-        for user_subscr in favorites:
-            res_user_obj = await FavoriteRepository().get_favorites_obj(user_subscr.user)
-            for text_item in res_user_obj:
-                if user_subscr.user.telegramchat_set.first():
+        favorites = await FavoriteRepository().get_favorites()
+        for subscription in favorites:
+            user_favorites = await FavoriteRepository().get_favorites_by_user(subscription.user)
+            for news in user_favorites:
+                if subscription.user.telegramchat_set.first():
                     await App.bot.send_message(
-                        chat_id = user_subscr.user.telegramchat_set.first().telegram_id,
+                        chat_id = subscription.user.telegramchat_set.first().telegram_id,
                         text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
-                            'кабинете</strong>\n\n' + text_item['text'], 
+                            'кабинете</strong>\n\n' + news['text'], 
                         parse_mode = 'html',
                         reply_markup = Markup.inline_buttons(
-                            [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')] ]
+                            [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{news["id"]}')] ]
                         )
                     )
                 else:
-                    user_profile = user_subscr.user.profile
+                    user_profile = subscription.user.profile
                     if user_profile:
                         tg_user = to_async(TgUser.objects.filter(user_profile = user_profile).first)()
                         if tg_user:
                             await App.bot.send_message(
                                 chat_id = tg_user.chat_id,
                                 text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
-                                    'кабинете</strong>\n\n' + text_item['text'], 
+                                    'кабинете</strong>\n\n' + news['text'], 
                                 parse_mode = 'html',
                                 reply_markup = Markup.inline_buttons(
-                                    [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{text_item["id"]}')] ]
+                                    [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{news["id"]}')] ]
                                 )
                             )

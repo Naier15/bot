@@ -31,7 +31,6 @@ async def main():
         minute = int(config.DISPATCH_TIME.split(':')[1]) if config.DISPATCH_TIME != '*' else '*',
         start_date = datetime.datetime.now()
     )
-    await app.send_favorites_obj()
     scheduler.add_job(
         app.send_favorites_obj,
         trigger = 'cron',
