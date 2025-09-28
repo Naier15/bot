@@ -5,7 +5,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from internal.config import Config
 config = Config()
-config.setup()
 
 from entities import App
 from internal import log

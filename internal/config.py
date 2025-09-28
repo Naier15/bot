@@ -9,9 +9,9 @@ res = load_dotenv()
 
 def connect_django(path_to_django: str):
     '''Подключение к Django'''
-    path.append(path_to_django)
-    environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
     if not django.conf.settings.configured:
+        path.append(path_to_django)
+        environ.setdefault('DJANGO_SETTINGS_MODULE', 'bashni.settings')
         django.setup()
         logging.info(f'--- Connected to Django models - {django.conf.settings.configured} ---')
 
@@ -55,6 +55,6 @@ class Config:
     DISPATCH_TIME = environ.get('DISPATCH_TIME', '16:20')
     CHANGE_PRICES_TIME = environ.get('CHANGE_PRICES_TIME', '14:50')
 
-    def setup(self) -> None:
+    def __init__(self) -> None:
         init_log(f'../logs/{self.LOG_FILE}')
         connect_django(self.DJANGO_PATH)
