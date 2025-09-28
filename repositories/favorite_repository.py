@@ -1,7 +1,7 @@
 from internal import to_async
-from config import Config
-from cabinet.models import FavoritesFlats, FavoritesCommercial, UserSubscription
-from property.templatetags.view_price import price
+from internal.config import Config
+from cabinet.models import FavoritesFlats, FavoritesCommercial, UserSubscription  # type: ignore
+from property.templatetags.view_price import price  # type: ignore
 from django.contrib.auth.models import User
 
 

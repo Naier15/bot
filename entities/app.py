@@ -11,8 +11,8 @@ from aiogram.enums import ParseMode
 from .user import User
 from repositories import UserRepository, FavoriteRepository
 from internal import Markup, log, to_async, Tempfile, text
-from config import Config
-from telegrambot.models import TgUser
+from internal.config import Config
+from telegrambot.models import TgUser # type: ignore
     
 
 config = Config()

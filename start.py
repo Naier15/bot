@@ -3,7 +3,7 @@ from aiogram import Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from config import Config
+from internal.config import Config
 config = Config()
 config.setup()
 
@@ -31,6 +31,7 @@ async def main():
         minute = int(config.DISPATCH_TIME.split(':')[1]) if config.DISPATCH_TIME != '*' else '*',
         start_date = datetime.datetime.now()
     )
+    await app.send_favorites_obj()
     scheduler.add_job(
         app.send_favorites_obj,
         trigger = 'cron',

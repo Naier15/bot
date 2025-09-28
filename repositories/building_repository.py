@@ -1,4 +1,4 @@
-from property.models import Buildings
+from property.models import Buildings  # type: ignore
 
 
 class BuildingRepository:

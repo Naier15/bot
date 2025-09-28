@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Optional, Self
 
 from repositories import SubscriptionRepository, PhotoRepository, UserRepository
-from config import Config
-from telegrambot.models import TgUser
+from internal.config import Config
+from telegrambot.models import TgUser # type: ignore
 
 
 config = Config()

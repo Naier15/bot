@@ -1,7 +1,7 @@
 from django.db import models
 
-from authapp.models import UserProfile
-from property.models import Buildings, BuildingPhotos
+from authapp.models import UserProfile  # type: ignore
+from property.models import Buildings, BuildingPhotos  # type: ignore
 
 
 class SeenPhoto(models.Model):

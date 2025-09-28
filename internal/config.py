@@ -47,7 +47,7 @@ class Config:
     BOT_TOKEN = environ['BOT_TOKEN']
     DJANGO_PATH = environ['DJANGO_PATH']
     TO_SET_COMMANDS = environ.get('TO_SET_COMMANDS', 0)
-    LOG_FILE = environ.get('LOG_FILE', 'log.log')
+    LOG_FILE = environ.get('LOG_FILE', 'main.log')
     MANAGER_LINK = environ.get('MANAGER_LINK', '+79679580207')
     DJANGO_HOST = environ.get('DJANGO_HOST', 'https://bashni.pro')
     REGION = environ.get('REGION', 'Asia/Vladivostok')
@@ -56,5 +56,5 @@ class Config:
     CHANGE_PRICES_TIME = environ.get('CHANGE_PRICES_TIME', '14:50')
 
     def setup(self) -> None:
-        init_log(self.LOG_FILE)
+        init_log(f'../logs/{self.LOG_FILE}')
         connect_django(self.DJANGO_PATH)

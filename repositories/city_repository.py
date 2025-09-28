@@ -1,5 +1,5 @@
-from property.models import City
-from config import Config
+from property.models import City  # type: ignore
+from internal.config import Config
 
 
 config = Config()

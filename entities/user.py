@@ -5,8 +5,8 @@ import re
 from .subscription import Subscription
 from repositories import UserRepository
 from internal import to_async
-from config import Config
-from telegrambot.models import TgUser
+from internal.config import Config
+from telegrambot.models import TgUser # type: ignore
 
 
 config = Config()

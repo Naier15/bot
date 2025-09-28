@@ -4,9 +4,9 @@ from django.db import transaction
 import secrets
 
 from internal import to_async
-from authapp.models import UserProfile
-from property.models import Buildings
-from telegrambot.models import TgUser
+from authapp.models import UserProfile  # type: ignore
+from property.models import Buildings  # type: ignore
+from telegrambot.models import TgUser  # type: ignore
 
 
 class UserRepository:
