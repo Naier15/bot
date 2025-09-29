@@ -9,10 +9,12 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from .user import User
-from repositories import UserRepository, FavoriteRepository
-from internal import Markup, log, to_async, Tempfile, text
-from internal.config import Config
-from telegrambot.models import TgUser # type: ignore
+from repositories import UserRepository
+from internal import Markup, log, Tempfile, text, Config
+try:
+    from models import TgUser
+except:
+    from telegrambot.models import TgUser  # type: ignore
     
 
 config = Config()
@@ -106,13 +108,32 @@ class App:
         return page
     
     @log
+    @staticmethod
+    async def send_msg(
+        chat_id: int, 
+        text: str, 
+        markup: Optional[types.InlineKeyboardMarkup | types.ReplyKeyboardMarkup | types.ReplyKeyboardRemove]
+    ) -> bool:
+        if config.DEBUG and chat_id != '341461613':
+            return False
+        await App.bot.send_message(
+            chat_id         = chat_id,
+            text            = text, 
+            parse_mode      = 'html',
+            reply_markup    = markup
+        )
+        return True
+    
+    @log
     async def send_news(self, user: TgUser, answer: str, photos_to_show: list[tuple[int, str, str]], is_dispatch: bool) -> None:        
         try:
-            await App.bot.send_message(
+            success = await App.send_msg(
                 user.chat_id, 
                 answer, 
-                reply_markup = App.menu() if is_dispatch else App.subscription_menu()
+                App.menu() if is_dispatch else App.subscription_menu()
             )
+            if not success:
+                return
         except TelegramForbiddenError:
             return
 
@@ -137,54 +158,3 @@ class App:
                         await App.bot.send_media_group(user.chat_id, [photo])
             except Exception as ex:
                 logging.error(f"Couldn't send photo. Error 1:\n{exception}\nError 2:\n{ex}")
-    
-    @log
-    async def dispatch_to_clients(self) -> None:
-        '''Рассылка клиентам'''
-        user_repository = UserRepository()
-        chats = await user_repository.get_dispatch_list()
-        async for chat_id in chats:
-            if config.DEBUG and chat_id != '341461613':
-                continue
-    
-            user = User(user_repository)
-            await user.sync(chat_id)
-
-            for subscription in user.subscriptions:
-                tg_user = await user.get()
-                news = await subscription.form_news(tg_user, is_dispatch = True)
-                if news is not None:
-                    answer, photos_to_show = news
-                    await self.send_news(tg_user, answer, photos_to_show, True)
-
-    @log
-    async def send_favorites_obj(self) -> None:
-        '''Отправка уведомлений об изменении цен в избранном'''
-        favorites = await FavoriteRepository().get_favorites()
-        for subscription in favorites:
-            user_favorites = await FavoriteRepository().get_favorites_by_user(subscription.user)
-            for news in user_favorites:
-                if subscription.user.telegramchat_set.first():
-                    await App.bot.send_message(
-                        chat_id = subscription.user.telegramchat_set.first().telegram_id,
-                        text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
-                            'кабинете</strong>\n\n' + news['text'], 
-                        parse_mode = 'html',
-                        reply_markup = Markup.inline_buttons(
-                            [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{news["id"]}')] ]
-                        )
-                    )
-                else:
-                    user_profile = subscription.user.profile
-                    if user_profile:
-                        tg_user = to_async(TgUser.objects.filter(user_profile = user_profile).first)()
-                        if tg_user:
-                            await App.bot.send_message(
-                                chat_id = tg_user.chat_id,
-                                text = '<strong>Уведомление об изменение цен в избранном в вашем личном '
-                                    'кабинете</strong>\n\n' + news['text'], 
-                                parse_mode = 'html',
-                                reply_markup = Markup.inline_buttons(
-                                    [ [types.InlineKeyboardButton(text = 'Удалить', callback_data = f'delete_{news["id"]}')] ]
-                                )
-                            )

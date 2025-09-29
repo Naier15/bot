@@ -17,6 +17,9 @@ class FavoriteRepository:
 
         fav_flats = await to_async(FavoritesFlats.objects.filter(user = user).all)()
         for fav_flat in fav_flats:
+            # if fav_flat.user.id != 1:
+            #     return []
+            # print(f'{fav_flat.property_pk.fk_building.fk_property.name} №{fav_flat.property_pk.fk_building.num_dom} has last price={fav_flat.price} and new price={fav_flat.property_pk.price_history.first().current_price}')
             if (not fav_flat.price) or (not fav_flat.property_pk.price_history.first()):
                 continue
 
@@ -64,7 +67,7 @@ class FavoriteRepository:
                 })
         return news
 
-    async def get_favorites(self) -> list[UserSubscription]:
+    async def get_all_favorites(self) -> list[UserSubscription]:
         return await to_async(UserSubscription.objects.filter(
             subscription_type = 'favorites', 
             telegram_subscription = True

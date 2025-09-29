@@ -1,7 +1,13 @@
+from typing import Optional, Self
 from django.db import models
+from django.contrib.auth.models import User
 
-from authapp.models import UserProfile  # type: ignore
-from property.models import Buildings, BuildingPhotos  # type: ignore
+try:
+    from ..authapp.models import UserProfile
+    from ..property.models import Buildings, BuildingPhotos
+except:
+    from authapp.models import UserProfile  # type: ignore
+    from property.models import Buildings, BuildingPhotos # type: ignore
 
 
 class SeenPhoto(models.Model):
@@ -29,3 +35,6 @@ class TgUser(models.Model):
     class Meta:
         verbose_name_plural = 'telegram пользователи'
 
+    @staticmethod
+    async def get(user: User, user_repository: object) -> Optional[Self]:
+        return await user_repository.get_user(name = user.username)

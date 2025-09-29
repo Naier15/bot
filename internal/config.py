@@ -55,6 +55,6 @@ class Config:
     DISPATCH_TIME = environ.get('DISPATCH_TIME', '16:20')
     CHANGE_PRICES_TIME = environ.get('CHANGE_PRICES_TIME', '14:50')
 
-    def __init__(self) -> None:
+    def setup(self) -> None:
         init_log(f'../logs/{self.LOG_FILE}')
         connect_django(self.DJANGO_PATH)
