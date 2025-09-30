@@ -56,7 +56,7 @@ async def start(msg: types.Message, state: FSMContext):
         await msg.answer(
             text.introduction,
             reply_markup = Markup.bottom_buttons([ 
-                [types.KeyboardButton(text = text.phone_button, request_contact = True)] 
+                [types.KeyboardButton(text = text.Phone.BUTTON, request_contact = True)] 
             ])
         )
         await app.set_state(MenuPage.phone, state)
@@ -74,16 +74,16 @@ async def get_contact(msg: types.Message, state: FSMContext):
                 saved = await app.user.save()
                 if not saved:
                     return await msg.answer(text.error, reply_markup = Markup.no_buttons())
-                await msg.answer(text.choose_email, reply_markup = Markup.no_buttons())
+                await msg.answer(text.Email.FILL, reply_markup = Markup.no_buttons())
                 await app.set_state(MenuPage.email, state)
                 return
             await app.go_back(state)
             await get_menu(msg, state)
         else:
             await msg.answer(
-                text.phone_error, 
+                text.Phone.ERROR, 
                 reply_markup = Markup.bottom_buttons([ 
-                    [types.KeyboardButton(text = text.phone_button, request_contact = True)] 
+                    [types.KeyboardButton(text = text.Phone.BUTTON, request_contact = True)] 
                 ])
             )
 
@@ -97,7 +97,7 @@ async def get_email(msg: types.Message, state: FSMContext):
             await app.go_back(state) 
             await get_menu(msg, state)
         else:
-            await msg.answer(text.email_tip, reply_markup = Markup.no_buttons())
+            await msg.answer(text.Email.TIP, reply_markup = Markup.no_buttons())
 
 @router.message(F.text == text.Btn.AUTH.value)
 @require_auth()
@@ -109,9 +109,9 @@ async def auth(msg: types.Message, state: FSMContext):
         if os_name == 'posix': 
             cache.set('telegram_user', tg_user.user_profile.user, 120)
         await msg.answer(
-            text.auth, 
+            text.Auth.SUCCESS, 
             reply_markup = Markup.inline_buttons([ 
-                [types.InlineKeyboardButton(text = text.auth_btn, url = 'https://bashni.pro')]
+                [types.InlineKeyboardButton(text = text.Auth.BUTTON, url = 'https://bashni.pro')]
             ])
         )
         await get_menu(msg, state)
@@ -143,7 +143,7 @@ async def get_menu(msg: types.Message, state: FSMContext):
     '''Команда меню и другие непонятные запросы'''
     async with App(state) as app:
         if not app.user.email:
-            await msg.answer(text.choose_email, reply_markup = Markup.no_buttons())
+            await msg.answer(text.Email.FILL, reply_markup = Markup.no_buttons())
             await app.set_state(MenuPage.email, state)
             return
     await msg.answer(
