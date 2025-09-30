@@ -20,7 +20,7 @@ class FavoriteRepository:
         for fav_flat in flats:
             flat = fav_flat.property_pk
 
-            # print(f'{flat.fk_building.fk_property.name} №{flat.fk_building.num_dom} has last price={flat.price} and new price={flat.property_pk.price_history.first().current_price}')
+            # print(f'{flat.fk_building.fk_property.name} №{flat.fk_building.num_dom} has last price={fav_flat.price} and new price={flat.price_history.first().current_price}')
             if (not fav_flat.price) or (not flat.price_history.first()):
                 continue
 

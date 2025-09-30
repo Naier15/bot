@@ -6,11 +6,7 @@ from repositories import UserRepository, FavoriteRepository
 from internal import Markup, log, Config
 from .user import User
 from .app import App
-
-try:
-    from models import TgUser
-except:
-    from telegrambot.models import TgUser  # type: ignore
+from telegrambot.models import TgUser 
 
 
 config = Config()
@@ -39,7 +35,11 @@ class Dispatch:
         favorites_repository = FavoriteRepository()
         all_favorites = await favorites_repository.get_all_favorites()
         for subscription in all_favorites:
-            # print('USER = ', await TgUser.get(subscription.user, UserRepository()))
+            # print(
+            #     '\nUSER = ', subscription.user.username, 
+            #     '\tTgUser = ', await TgUser.get(subscription.user, UserRepository()),
+            #     '\tTelegramchat_set = ', subscription.user.telegramchat_set.first()
+            # )
             user_favorites = await favorites_repository.get_favorites_by_user(subscription.user)
             for news in user_favorites:
                 if subscription.user.telegramchat_set.first():

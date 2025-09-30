@@ -3,7 +3,7 @@ from typing import Optional, Self
 
 from repositories import SubscriptionRepository, PhotoRepository, UserRepository
 from internal.config import Config
-from telegrambot.models import TgUser # type: ignore
+from telegrambot.models import TgUser
 
 
 config = Config()
