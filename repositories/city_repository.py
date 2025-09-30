@@ -1,4 +1,4 @@
-from property.models import City  # type: ignore
+from property.models import City
 from internal.config import Config
 
 

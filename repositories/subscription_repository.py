@@ -2,7 +2,7 @@ from django.db.models import Q
 
 from internal import to_async
 from internal.config import Config
-from property.models import Buildings, CheckTermsPassKeys, BuildingPhotos  # type: ignore
+from property.models import Buildings, CheckTermsPassKeys, BuildingPhotos
 
 
 config = Config()

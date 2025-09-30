@@ -23,7 +23,7 @@ async def main():
         commands = [ types.BotCommand(command = 'menu', description = 'В меню') ]
         await app.bot.set_my_commands(commands, types.BotCommandScopeDefault())
     scheduler = AsyncIOScheduler(timezone = config.REGION)
-    Dispatch().setup(scheduler)
+    await Dispatch().setup(scheduler)
     scheduler.start()
     
     dp = Dispatcher(storage = MemoryStorage())

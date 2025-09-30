@@ -1,7 +1,7 @@
 from django.db.models import Q
 
-from property.models import Buildings, BuildingPhotos  # type: ignore
-from telegrambot.models import TgUser, SeenPhoto  # type: ignore
+from property.models import Buildings, BuildingPhotos
+from telegrambot.models import TgUser, SeenPhoto
 
 
 class PhotoRepository:
