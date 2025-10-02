@@ -1,0 +1,12 @@
+[Unit]
+Description=tg-bot
+After=multi-user.target
+
+[Service]
+User=root
+Type=simple
+Restart=always
+ExecStart=/home/project/bashni/env/bin/python /home/project/bashni/telegrambot/start.py
+
+[Install]
+WantedBy=multi-user.target
