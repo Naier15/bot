@@ -74,7 +74,6 @@ class Dispatch:
             minute = int(config.DISPATCH_TIME.split(':')[1]) if config.DISPATCH_TIME != '*' else '*',
             start_date = datetime.datetime.now()
         )
-        await self.dispatch_favorites()
         scheduler.add_job(
             self.dispatch_favorites,
             trigger = 'cron',
