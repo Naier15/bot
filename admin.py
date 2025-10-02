@@ -1,9 +1,5 @@
 from django.contrib import admin
-
-try:
-    from models import TgUser, SeenPhoto
-except:
-    from telegrambot.models import TgUser, SeenPhoto  # type: ignore
+from telegrambot.models import TgUser, SeenPhoto
 
 
 admin.site.register(TgUser)
