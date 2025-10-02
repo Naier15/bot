@@ -33,11 +33,12 @@ class Dispatch:
     async def dispatch_favorites(self) -> None:
         '''Отправка уведомлений об изменении цен в избранном'''
         favorites_repository = FavoriteRepository()
+        user_repository = UserRepository()
         all_favorites = await favorites_repository.get_all_favorites()
         for subscription in all_favorites:
             # print(
             #     '\nUSER = ', subscription.user.username, 
-            #     '\tTgUser = ', await TgUser.get(subscription.user, UserRepository()),
+            #     '\tTgUser = ', subscription.user.username, await user_repository.get_user(name = subscription.user.username),
             #     '\tTelegramchat_set = ', subscription.user.telegramchat_set.first()
             # )
             user_favorites = await favorites_repository.get_favorites_by_user(subscription.user)
@@ -52,7 +53,7 @@ class Dispatch:
                         )
                     )
                 else:
-                    tg_user = await TgUser.get(subscription.user)
+                    tg_user = await user_repository.get_user(name = subscription.user.username)
                     if tg_user:
                         await App.send_msg(
                             tg_user.chat_id,
