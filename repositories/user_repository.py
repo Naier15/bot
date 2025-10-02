@@ -13,7 +13,7 @@ class UserRepository:
 
     async def create_user(self, chat_id: str, login: str, phone_number: str, email: Optional[str] = None) -> bool:
         '''Создать пользователя'''
-        async with transaction.atomic():
+        with transaction.atomic():
             user = await to_async(DjUser.objects.create_user)(
                 username = login,
                 password = secrets.token_urlsafe(16),
