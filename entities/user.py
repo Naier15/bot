@@ -5,7 +5,7 @@ import re
 from .subscription import Subscription
 from repositories import UserRepository
 from internal import to_async
-from config import Config
+from internal.config import Config
 from telegrambot.models import TgUser
 
 

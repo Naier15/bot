@@ -22,7 +22,7 @@ async def menu(msg: types.Message, state: FSMContext):
     async with App(state) as app:
         await app.set_state(SubscriptionPage.menu, state)
     await msg.answer(
-        text.subscription_menu, 
+        text.Subscription.MENU, 
         reply_markup = App.subscription_menu()
     )
     
@@ -35,11 +35,11 @@ async def list(msg: types.Message, state: FSMContext):
         subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
             return await msg.answer(
-                text.subscription_empty, 
+                text.Subscription.EMPTY, 
                 reply_markup = Markup.current()
             )
         await msg.answer(
-            text.subscriptions, 
+            text.Subscription.CURRENT, 
             reply_markup = Markup.inline_buttons(
                 subscription_btns + Markup.back_button()
             ) 
@@ -54,12 +54,12 @@ async def remove_subscription_prompt(msg: types.Message, state: FSMContext):
         subscription_btns = await app.user.form_subscriptions_as_buttons()
         if len(subscription_btns) == 0:
             return await msg.answer(
-                text.subscription_empty, 
+                text.Subscription.EMPTY, 
                 reply_markup = Markup.current()
             )
         
         await msg.answer(
-            text.subscription_remove, 
+            text.Subscription.REMOVE, 
             reply_markup = Markup.inline_buttons(
                 subscription_btns + Markup.back_button()
             )
@@ -71,7 +71,7 @@ async def remove_subscription_prompt(msg: types.Message, state: FSMContext):
 @log
 async def remove_subscription_invalid(msg: types.Message, state: FSMContext):
     '''Ошибка удаления подписки'''
-    await msg.answer(text.choose_property_error)
+    await msg.answer(text.Property.ERROR2)
 
 @router.callback_query(SubscriptionPage.remove, F.data)
 @log
@@ -88,9 +88,9 @@ async def remove_subscription_confirmed(call: types.CallbackQuery, state: FSMCon
                 app.user.subscriptions.remove(sub)
                 break
         else:
-            return await call.message.answer(text.choose_property_error)
+            return await call.message.answer(text.Subscription.REMOVE)
         
-        await call.message.answer(text.subscription_remove_success)
+        await call.message.answer(text.Subscription.REMOVE_SUCCESS)
         await app.go_back(state)
         await menu(call.message, state)
 

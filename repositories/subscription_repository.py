@@ -1,7 +1,7 @@
 from django.db.models import Q
 
 from internal import to_async
-from config import Config
+from internal.config import Config
 from property.models import Buildings, CheckTermsPassKeys, BuildingPhotos
 
 

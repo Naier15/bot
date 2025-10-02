@@ -1,5 +1,4 @@
 from django.db import models
-
 from authapp.models import UserProfile
 from property.models import Buildings, BuildingPhotos
 

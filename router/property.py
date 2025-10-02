@@ -31,7 +31,7 @@ async def start(msg: types.Message, state: FSMContext):
             return
         
         await msg.answer(
-            text.choose_city, 
+            text.City.CHOICE, 
             reply_markup = buttons
         )
         await app.set_state(PropertyPage.city, state)
@@ -71,7 +71,7 @@ async def navigation(call: types.CallbackQuery, state: FSMContext):
 @log
 async def city_error(msg: types.Message, state: FSMContext):
     '''Ошибка выбора города'''
-    await msg.answer(text.choose_city_error)
+    await msg.answer(text.City.ERROR)
 
 @router.callback_query(PropertyPage.city, F.data)
 @log
@@ -85,7 +85,7 @@ async def city(call: types.CallbackQuery, state: FSMContext):
         properties = await PropertyRepository().get(app.user.added_subscription.city_id)
         if len(properties) == 0:
             await app.go_back(state)
-            await call.message.answer(text.no_property)
+            await call.message.answer(text.Property.EMPTY)
             return await start(call.message, state)
 
         buttons = PageBuilder.using(properties).current()
@@ -93,7 +93,7 @@ async def city(call: types.CallbackQuery, state: FSMContext):
             return
         
         await call.message.answer(
-            text.choose_property, 
+            text.Property.CHOICE, 
             reply_markup = buttons
         )
         await app.set_state(PropertyPage.property, state)
@@ -107,11 +107,11 @@ async def property_error(msg: types.Message, state: FSMContext):
         properties = await PropertyRepository().get(app.user.added_subscription.city_id)
         results = fuzzywuzzy.process.extract(msg.text, properties, limit = 6)
         if len(results) == 0:
-            return await msg.answer(text.choose_property_error)
+            return await msg.answer(text.Property.ERROR)
         results = [result[0] for result in results]
         buttons = PageBuilder.using(results).current()
         await msg.answer(
-            text.choose_exact_property, 
+            text.Property.ERROR, 
             reply_markup = buttons
         )
 
@@ -121,7 +121,7 @@ async def property(call: types.CallbackQuery, state: FSMContext):
     '''Сохранение ЖК и выбор дома (если домов в ЖК более одного)'''
     async with App(state) as app:
         if not await app.user.added_subscription.set(property_id = call.data):
-            return await call.message.answer(text.choose_property_error)
+            return await call.message.answer(text.Property.ERROR)
     
         buildings = await BuildingRepository().get(app.user.added_subscription.property_id)
         if len(buildings) == 0:
@@ -133,7 +133,7 @@ async def property(call: types.CallbackQuery, state: FSMContext):
         else:
             buttons = PageBuilder.using(buildings).current()    
             await call.message.answer(
-                text.choose_house, 
+                text.House.CHOICE, 
                 reply_markup = buttons
             )
             await app.set_state(PropertyPage.building, state)
@@ -143,7 +143,7 @@ async def property(call: types.CallbackQuery, state: FSMContext):
 @log
 async def buidling_error(msg: types.Message, state: FSMContext):
     '''Ошибка выбора дома'''
-    await msg.answer(text.choose_house_error)
+    await msg.answer(text.House.ERROR)
 
 @router.callback_query(PropertyPage.building, F.data)
 @log
@@ -157,7 +157,7 @@ async def building(call: types.CallbackQuery, state: FSMContext):
 async def success(call: types.CallbackQuery, state: FSMContext):
     '''Завершение подписки'''
     async with App(state) as app:
-        await call.message.answer(text.subscription_success)
+        await call.message.answer(text.Subscription.SUCCESS)
         await app.user.save_subscription()
         await app.clear_history()
     await menu(call.message, state) 
