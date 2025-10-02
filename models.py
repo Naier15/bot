@@ -28,4 +28,4 @@ class TgUser(models.Model):
 
     class Meta:
         verbose_name_plural = 'telegram пользователи'
-
+        ordering = ['id']
