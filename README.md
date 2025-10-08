@@ -1,5 +1,7 @@
 <h2 align="center">Telegram bot Bashni.pro</h2><br/>
-Протестировано на версии python 3.13<br/><br/>
+Протестировано на версии python 3.13<br/>
+Настраивается как приложение django проекта<br/>
+<br/>
 
 ## Quick start
 #### Настройки:
