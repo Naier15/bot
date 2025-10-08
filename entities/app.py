@@ -104,8 +104,8 @@ class App:
             self.history.pop() # Удаляем и предыдущего состояние, поскольку оно добавится в следующем обработчике
         return page
     
-    @log
     @staticmethod
+    @log
     async def send_msg(
         chat_id: int, 
         text: str, 
@@ -121,8 +121,9 @@ class App:
         )
         return True
     
+    @staticmethod
     @log
-    async def send_news(self, user: TgUser, answer: str, photos_to_show: list[tuple[int, str, str]], is_dispatch: bool) -> None:        
+    async def send_news(user: TgUser, answer: str, photos_to_show: list[tuple[int, str, str]], is_dispatch: bool) -> None:        
         try:
             success = await App.send_msg(
                 user.chat_id, 

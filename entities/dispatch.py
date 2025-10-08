@@ -6,7 +6,6 @@ from repositories import UserRepository, FavoriteRepository
 from internal import Markup, log, Config
 from .user import User
 from .app import App
-from telegrambot.models import TgUser 
 
 
 config = Config()
@@ -27,7 +26,7 @@ class Dispatch:
                 news = await subscription.form_news(tg_user, is_dispatch = True)
                 if news:
                     answer, photos_to_show = news
-                    await self.send_news(tg_user, answer, photos_to_show, True)
+                    await App.send_news(tg_user, answer, photos_to_show, True)
 
     @log
     async def dispatch_favorites(self) -> None:
