@@ -47,9 +47,9 @@ class User:
         except Exception as ex:
             return False
 
-    async def set_login(self, login: str) -> bool:
+    async def set_login(self, login: str|int) -> bool:
         '''Добавление логина'''
-        if len(login) > 5 and len(login) < 16 and re.match(r'^[a-zA-Z0-9_]*$', login):
+        if isinstance(login, int) or (5 < len(login) < 16 and re.match(r'^[a-zA-Z0-9_]*$', login)):
             self.login = login
             return True
         else:
