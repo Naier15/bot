@@ -43,7 +43,7 @@ class SubscriptionRepository:
             )()
         ]
         photos = [ 
-            (photo['id'], f'{config.DJANGO_HOST}/{photo['build_img']}', photo['fk_month__build_month']) 
+            (photo['id'], f'{config.DJANGO_HOST}/media/{photo['build_img']}', photo['fk_month__build_month']) 
             for photo in last_photos 
         ]
 
