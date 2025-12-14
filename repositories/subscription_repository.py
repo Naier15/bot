@@ -1,4 +1,5 @@
 from django.db.models import Q
+from urllib.parse import quote
 
 from internal import to_async
 from internal.config import Config
@@ -11,16 +12,16 @@ class SubscriptionRepository:
     async def get(self, building_id: str) -> dict:
         '''Данные по подписке на здание'''
         building = await to_async(
-            Buildings.objects.select_related('fk_property', 'fk_property__city') \
-            .filter(id = int(building_id))\
+            Buildings.objects.select_related('fk_property', 'fk_property__city')
+            .filter(id = int(building_id))
             .values(
                 'id',
-                'fk_property__pk', \
-                'fk_property__name', \
-                'fk_property__slug', \
-                'fk_property__city__city_name', \
-                'build_stage', \
-                'operation_term', \
+                'fk_property__pk',
+                'fk_property__name',
+                'fk_property__slug',
+                'fk_property__city__city_name',
+                'build_stage',
+                'operation_term',
                 'num_dom'
             ).first
         )()
@@ -31,14 +32,19 @@ class SubscriptionRepository:
         pass_keys = await to_async(CheckTermsPassKeys.objects.filter(fk_object = building['id']).first)()
         last_photos = [ 
             await to_async(
-                BuildingPhotos.objects.select_related('fk_month') \
+                BuildingPhotos.objects.select_related('fk_month')
                     .filter(Q(fk_month__fk_building = building['id']) & Q(build_img__isnull = False))
                     .order_by('-fk_month__build_date')
+                    .values(
+                        'id',
+                        'build_img',
+                        'fk_month__build_month'
+                    )
                     .first
             )()
-        ] 
+        ]
         photos = [ 
-            (photo.id, f'{config.DJANGO_HOST}{photo.build_img.url}', photo.fk_month.build_month) 
+            (photo['id'], f'{config.DJANGO_HOST}/{quote(photo['build_img'])}', photo['fk_month__build_month']) 
             for photo in last_photos 
         ]
 

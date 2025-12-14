@@ -29,4 +29,4 @@ python_version = "3.13"
 
 [scripts]
 start = "python start.py"
-reload = "nodemon --ext py --exec 'pipenv run start' --watch './**/*'"
+reload = "nodemon --ext py -d 2 -x 'pipenv run start' -w './**/*'"
