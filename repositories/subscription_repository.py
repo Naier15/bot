@@ -1,5 +1,4 @@
 from django.db.models import Q
-from urllib.parse import quote
 
 from internal import to_async
 from internal.config import Config
@@ -44,7 +43,7 @@ class SubscriptionRepository:
             )()
         ]
         photos = [ 
-            (photo['id'], f'{config.DJANGO_HOST}/{quote(photo['build_img'])}', photo['fk_month__build_month']) 
+            (photo['id'], f'{config.DJANGO_HOST}/{photo['build_img']}', photo['fk_month__build_month']) 
             for photo in last_photos 
         ]
 
