@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 
-from internal import to_async, Config
+from config import Config
+from internal import to_async
 from cabinet.models import FavoritesFlats, FavoritesCommercial, UserSubscription
 from property.models import Flats
 from property.templatetags.view_price import price

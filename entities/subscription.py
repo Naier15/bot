@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional, Self
 
+from config import Config
 from repositories import SubscriptionRepository, PhotoRepository, UserRepository
-from internal.config import Config
 from telegrambot.models import TgUser
 
 

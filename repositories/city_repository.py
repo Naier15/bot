@@ -1,5 +1,5 @@
 from property.models import City
-from internal.config import Config
+from config import Config
 
 
 config = Config()

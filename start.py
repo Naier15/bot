@@ -3,7 +3,7 @@ from aiogram import Dispatcher, types
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from internal.config import Config
+from config import Config
 config = Config()
 config.setup()
 

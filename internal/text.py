@@ -1,5 +1,5 @@
 from enum import Enum
-from internal.config import Config
+from config import Config
 
 config = Config()
 manager = config.MANAGER_LINK

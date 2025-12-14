@@ -3,7 +3,8 @@ from aiogram import types
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from repositories import UserRepository, FavoriteRepository
-from internal import Markup, log, Config
+from config import Config
+from internal import Markup, log
 from .user import User
 from .app import App
 

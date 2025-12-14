@@ -3,9 +3,9 @@ from aiogram import types
 import re
 
 from .subscription import Subscription
+from config import Config
 from repositories import UserRepository
 from internal import to_async
-from internal.config import Config
 from telegrambot.models import TgUser
 
 

@@ -10,7 +10,8 @@ from aiogram.enums import ParseMode
 
 from .user import User
 from repositories import UserRepository
-from internal import Markup, log, Tempfile, text, Config
+from config import Config
+from internal import Markup, log, Tempfile, text
 from telegrambot.models import TgUser
     
 
