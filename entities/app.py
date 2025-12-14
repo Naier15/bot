@@ -138,6 +138,7 @@ class App:
         exception = None
         try:
             for id, url, month in photos_to_show:
+                logging.info(id, url, month)
                 photo = types.InputMediaPhoto(
                     media = url,
                     caption = month
