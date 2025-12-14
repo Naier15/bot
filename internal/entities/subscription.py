@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Self
 
 from config import Config
-from repositories import SubscriptionRepository, PhotoRepository, UserRepository
+from internal.repositories import SubscriptionRepository, PhotoRepository, UserRepository
 from telegrambot.models import TgUser
 
 

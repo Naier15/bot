@@ -8,11 +8,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from .user import User
-from repositories import UserRepository
 from config import Config
 from internal import Markup, log, Tempfile, text
+from internal.repositories import UserRepository
 from telegrambot.models import TgUser
+from .user import User
     
 
 config = Config()

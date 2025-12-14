@@ -7,8 +7,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from django.core.cache import cache
 
-from entities import App
 from internal import text, Markup, log
+from internal.entities import App
 
 
 router = Router()

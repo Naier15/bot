@@ -2,9 +2,9 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from repositories import FavoriteRepository
-from entities import App
 from internal import text, Markup, log
+from internal.repositories import FavoriteRepository
+from internal.entities import App
 from .menu import get_menu, reload, require_auth
 
 

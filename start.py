@@ -7,12 +7,12 @@ from config import Config
 config = Config()
 config.setup()
 
-from entities import App, Dispatch
 from internal import log
-from router import menu_router # Страница главного меню и раздел помощь
-from router import buildings_router # Разделы квартир и офисов
-from router import subscription_router # Раздел подписок - просмотр, удаление
-from router import property_router # Раздел добавления новой подписки
+from internal.entities import App, Dispatch
+from internal.router import menu_router # Страница главного меню и раздел помощь
+from internal.router import buildings_router # Разделы квартир и офисов
+from internal.router import subscription_router # Раздел подписок - просмотр, удаление
+from internal.router import property_router # Раздел добавления новой подписки
 
 
 @log

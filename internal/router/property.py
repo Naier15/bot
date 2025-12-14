@@ -4,9 +4,9 @@ from aiogram.fsm.state import State, StatesGroup
 import fuzzywuzzy
 import fuzzywuzzy.process
 
-from repositories import CityRepository, PropertyRepository, BuildingRepository
-from entities import App
 from internal import text, PageBuilder, log
+from internal.repositories import CityRepository, PropertyRepository, BuildingRepository
+from internal.entities import App
 from .menu import reload, require_auth
 from .subscription import menu, SubscriptionPage
 
@@ -129,7 +129,7 @@ async def property(call: types.CallbackQuery, state: FSMContext):
         elif len(buildings) == 1:
             if not await app.user.added_subscription.set(building_id = buildings[0]['id']):
                 return
-            await success(call, state)
+            await success(call.message, state)
         else:
             buttons = PageBuilder.using(buildings).current()    
             await call.message.answer(
@@ -152,12 +152,12 @@ async def building(call: types.CallbackQuery, state: FSMContext):
     async with App(state) as app:
         if not await app.user.added_subscription.set(building_id = call.data):
             return
-    await success(call, state)
+    await success(call.message, state)
 
-async def success(call: types.CallbackQuery, state: FSMContext):
+async def success(message: types.Message, state: FSMContext):
     '''Завершение подписки'''
     async with App(state) as app:
-        await call.message.answer(text.Subscription.SUCCESS)
+        await message.answer(text.Subscription.SUCCESS)
         await app.user.save_subscription()
         await app.clear_history()
-    await menu(call.message, state) 
+    await menu(message, state) 

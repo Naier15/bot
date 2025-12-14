@@ -1,9 +1,9 @@
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
-from entities import App
-from repositories import CityRepository
 from internal import text, log
+from internal.entities import App
+from internal.repositories import CityRepository
 from .menu import require_auth
 
 
